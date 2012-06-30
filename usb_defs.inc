@@ -1,6 +1,6 @@
 #define	NUM_CONFIGURATIONS	1
 #define	NUM_INTERFACES		1
-#define NUM_STRINGS			2
+#define NUM_STRINGS		2
 
 ; Define the states that the USB interface can be in
 #define	POWERED_STATE	0x00
@@ -19,11 +19,11 @@
 #define ENDPT_CONTROL		0x16	; enable for in, out and setup
 #define ENDPT_NON_CONTROL	0x1E	; enable for in, and out
 
-#define INT_STAT_MASK_RESET	0x01
-#define INT_STAT_MASK_ERROR	0x02
+#define INT_STAT_MASK_RESET		0x01
+#define INT_STAT_MASK_ERROR		0x02
 #define INT_STAT_MASK_TOKEN_DONE	0x04
-#define INT_STAT_MASK_SLEEP	0x08
-#define INT_STAT_MASK_STALL	0x10
+#define INT_STAT_MASK_SLEEP		0x08
+#define INT_STAT_MASK_STALL		0x10
 
 #define TOKEN_OUT	(0x01<<2)
 #define TOKEN_ACK	(0x02<<2)
@@ -177,7 +177,7 @@
 #define	ENDPOINT	5
 
 ; HID class descriptor types
-#define HID			0x21
+#define HID		0x21
 #define REPORT		0x22
 #define PHYSICAL	0x23
 
@@ -194,23 +194,23 @@
 ; Standard USB requests
 #define NO_REQUEST		0xFF
 #define	GET_STATUS		0x00
-#define	CLEAR_FEATURE	0x01
+#define	CLEAR_FEATURE		0x01
 #define	SET_FEATURE		0x03
 #define	SET_ADDRESS		0x05
-#define	GET_DESCRIPTOR	0x06
-#define SET_DESCRIPTOR	0x07
+#define	GET_DESCRIPTOR		0x06
+#define SET_DESCRIPTOR		0x07
 #define	GET_CONFIGURATION	0x08
 #define	SET_CONFIGURATION	0x09
-#define	GET_INTERFACE	0x0A
-#define	SET_INTERFACE	0x0B
+#define	GET_INTERFACE		0x0A
+#define	SET_INTERFACE		0x0B
 #define SYNCH_FRAME		0x0C
 
 ; HID Class requests
-#define GET_REPORT		0x01
-#define GET_IDLE		0x02
+#define GET_REPORT	0x01
+#define GET_IDLE	0x02
 #define GET_PROTOCOL	0x03
-#define SET_REPORT		0x09
-#define SET_IDLE		0x0A
+#define SET_REPORT	0x09
+#define SET_IDLE	0x0A
 #define SET_PROTOCOL	0x0B
 
 #define	GET_STRING_DESCRIPTOR	0x66
@@ -241,9 +241,9 @@
 #define	COPYSTRINGDESC2EP0	0x16 << 2
 #define	ZEROLENPACKET		0x17 << 2
 
-#define EP0				0x00 << 3
-#define EP1				0x01 << 3
-#define EP2				0x02 << 3
+#define EP0			0x00 << 3
+#define EP1			0x01 << 3
+#define EP2			0x02 << 3
 
 #define STANDARD		0x00 << 5
 #define CLASS			0x01 << 5

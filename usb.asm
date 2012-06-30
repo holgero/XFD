@@ -211,12 +211,6 @@ InitUSB
 	movwf	USB_protocol, BANKED	; default protocol to report protocol initially
 	movlw	NO_REQUEST
 	movwf	USB_dev_req, BANKED	; No device requests in process
-#ifdef SHOW_ENUM_STATUS
-	movlw	b'11110000'		; RD0-3 outputs (LEDs 1-4), RD4-7 inputs
-	movwf	TRISD, ACCESS
-	movlw	0x01
-	movwf	PORTD, ACCESS		; set bit zero to indicate Powered status
-#endif
 	return
 
 ServiceUSB
@@ -225,34 +219,14 @@ ServiceUSB
 			clrf		UEIR, ACCESS
 			break
 		caseset UIR, SOFIF, ACCESS
-			bcf			UIR, SOFIF, ACCESS
+			bcf		UIR, SOFIF, ACCESS
 			break
 		caseset	UIR, IDLEIF, ACCESS
-			bcf			UIR, IDLEIF, ACCESS
+			bcf		UIR, IDLEIF, ACCESS
 			break
 		caseset UIR, ACTVIF, ACCESS
-			bcf			UIR, ACTVIF, ACCESS
-			bcf			UCON, SUSPND, ACCESS
-#ifdef SHOW_ENUM_STATUS
-			movlw		0xF0
-			andwf		PORTD, F, ACCESS
-			banksel		USB_USWSTAT
-			movf		USB_USWSTAT, W, BANKED
-			select
-				case POWERED_STATE
-					movlw	0x01
-					break
-				case DEFAULT_STATE
-					movlw	0x02
-					break
-				case ADDRESS_STATE
-					movlw	0x04
-					break
-				case CONFIG_STATE
-					movlw	0x08
-			ends
-			iorwf		PORTD, F, ACCESS
-#endif
+			bcf		UIR, ACTVIF, ACCESS
+			bcf		UCON, SUSPND, ACCESS
 			break
 		caseset	UIR, STALLIF, ACCESS
 			bcf			UIR, STALLIF, ACCESS
@@ -307,11 +281,6 @@ ServiceUSB
 			movwf		USB_USWSTAT, BANKED
 			movlw		0x01
 			movwf		USB_device_status, BANKED	; self powered, remote wakeup disabled
-#ifdef SHOW_ENUM_STATUS
-			movlw		0xF0
-			andwf		PORTD, F, ACCESS
-			bsf 		PORTD, 1, ACCESS		; set bit 1 of PORTB to indicate Powered state
-#endif
 			bsf		PORTA, 2, ACCESS
 			break
 		caseset	UIR, TRNIF, ACCESS
@@ -333,20 +302,6 @@ ServiceUSB
 			movf		USTAT, W, ACCESS
 			movwf		USB_USTAT, BANKED		; save the USB status register
 			bcf			UIR, TRNIF, ACCESS		; clear TRNIF interrupt flag
-#ifdef SHOW_ENUM_STATUS
-			andlw		0x18					; extract EP bits
-			select
-				case EP0
-					movlw		0x20
-					break
-				case EP1
-					movlw		0x40
-					break
-				case EP2
-					movlw		0x80
-					break
-			ends
-#endif
 			movf		USB_buffer_desc, W, BANKED
 			andlw		0x3C					; extract PID bits
 			select
@@ -772,11 +727,6 @@ StandardRequests
 					case 0
 						movlw		ADDRESS_STATE
 						movwf		USB_USWSTAT, BANKED
-#ifdef SHOW_ENUM_STATUS
-						movlw		0xF0
-						andwf		PORTD, F, ACCESS
-						bsf		PORTD, 2, ACCESS
-#endif
 						break
 					default
 						movlw		CONFIG_STATE
@@ -792,11 +742,6 @@ StandardRequests
 						movwf		BD1IST, BANKED		; clear UOWN bit (PIC can write EP1 IN buffer)
 						movlw		ENDPT_IN_ONLY
 						movwf		UEP1, ACCESS		; enable EP1 for interrupt in transfers
-#ifdef SHOW_ENUM_STATUS
-						movlw		0xF0
-						andwf		PORTD, F, ACCESS
-						bsf		PORTD, 3, ACCESS
-#endif
 				ends
 				banksel		BD0IBC
 				clrf		BD0IBC, BANKED		; set byte count to 0
@@ -970,20 +915,10 @@ ProcessInToken
 						case 0
 							movlw		DEFAULT_STATE
 							movwf		USB_USWSTAT, BANKED
-#ifdef SHOW_ENUM_STATUS
-							movlw		0xF0
-							andwf		PORTD, F, ACCESS
-							bsf			PORTD, 1, ACCESS
-#endif
 							break
 						default
 							movlw		ADDRESS_STATE
 							movwf		USB_USWSTAT, BANKED
-#ifdef SHOW_ENUM_STATUS
-							movlw		0xF0
-							andwf		PORTD, F, ACCESS
-							bsf			PORTD, 2, ACCESS
-#endif
 					ends
 					break
 				case GET_DESCRIPTOR
