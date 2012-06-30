@@ -332,7 +332,7 @@ ProcessSetupToken
 	movwf		BD0OBC, BANKED		; reset the byte count
 	movwf		BD0IST, BANKED		; return the in buffer to us (dequeue any pending requests)
 	banksel		USB_buffer_data+bmRequestType
-	ifl	USB_buffer_data+bmRequestType, EQ, 0x21
+	ifl	USB_buffer_data+bmRequestType, 0x21
 		movlw		0xC8
 	otherwise
 		movlw		0x88
@@ -484,7 +484,7 @@ StandardRequests
 					movf		USB_buffer_data+wValue, W, BANKED
 					select
 						case DEVICE_REMOTE_WAKEUP
-							ifl USB_buffer_data+bRequest, EQ, CLEAR_FEATURE
+							ifl USB_buffer_data+bRequest, CLEAR_FEATURE
 								bcf			USB_device_status, 1, BANKED
 							otherwise
 								bsf			USB_device_status, 1, BANKED
@@ -505,7 +505,7 @@ StandardRequests
 							movf		USB_buffer_data+wIndex, W, BANKED	; get EP
 							andlw		0x0F			; strip off direction bit
 							ifset STATUS, Z, ACCESS			; see if it is EP0
-								ifl USB_buffer_data+bRequest, EQ, CLEAR_FEATURE
+								ifl USB_buffer_data+bRequest, CLEAR_FEATURE
 									bcf		UEP0, EPSTALL, ACCESS
 								otherwise
 									bsf		UEP0, EPSTALL, ACCESS
@@ -533,7 +533,7 @@ StandardRequests
 							andifclr INDF0, EPINEN, ACCESS
 								bsf			UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
 							otherwise
-								ifl USB_buffer_data+bRequest, EQ, CLEAR_FEATURE
+								ifl USB_buffer_data+bRequest, CLEAR_FEATURE
 									bcf		INDF0, EPSTALL, ACCESS
 								otherwise
 									bsf		INDF0, EPSTALL, ACCESS
@@ -575,7 +575,7 @@ StandardRequests
 					movwf		USB_desc_ptr, BANKED
 					call		Descriptor		; get descriptor length
 					movwf		USB_bytes_left, BANKED
-					ifl USB_buffer_data+(wLength+1), EQ, 0
+					ifl USB_buffer_data+(wLength+1), 0
 					andiff USB_buffer_data+wLength, LT, USB_bytes_left
 						movf		USB_buffer_data+wLength, W, BANKED
 						movwf		USB_bytes_left, BANKED
@@ -599,7 +599,7 @@ StandardRequests
 						movwf		USB_bytes_left, BANKED
 						movlw		0x02
 						subwf		USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
-						ifl USB_buffer_data+(wLength+1), EQ, 0
+						ifl USB_buffer_data+(wLength+1), 0
 						andiff USB_buffer_data+wLength, LT, USB_bytes_left
 							movf		USB_buffer_data+wLength, W, BANKED
 							movwf		USB_bytes_left, BANKED
@@ -629,7 +629,7 @@ StandardRequests
 						movwf		USB_desc_ptr, BANKED
 						call		Descriptor	; get descriptor length
 						movwf		USB_bytes_left, BANKED
-						ifl USB_buffer_data+(wLength+1), EQ, 0
+						ifl USB_buffer_data+(wLength+1), 0
 						andiff USB_buffer_data+wLength, LT, USB_bytes_left
 							movf		USB_buffer_data+wLength, W, BANKED
 							movwf		USB_bytes_left, BANKED
@@ -653,7 +653,7 @@ StandardRequests
 						movwf		USB_desc_ptr, BANKED
 						call		Descriptor	; get descriptor length
 						movwf		USB_bytes_left, BANKED
-						ifl USB_buffer_data+(wLength+1), EQ, 0
+						ifl USB_buffer_data+(wLength+1), 0
 						andiff USB_buffer_data+wLength, LT, USB_bytes_left
 							movf		USB_buffer_data+wLength, W, BANKED
 							movwf		USB_bytes_left, BANKED
@@ -677,7 +677,7 @@ StandardRequests
 					ends
 					ifclr USB_error_flags, 0, BANKED
 						movwf		USB_desc_ptr, BANKED
-						ifl USB_buffer_data+(wLength+1), EQ, 0
+						ifl USB_buffer_data+(wLength+1), 0
 						andiff USB_buffer_data+wLength, LT, USB_bytes_left
 							movf		USB_buffer_data+wLength, W, BANKED
 							movwf		USB_bytes_left, BANKED
@@ -707,36 +707,37 @@ StandardRequests
 			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
 			break
 		case SET_CONFIGURATION
-			ifl USB_buffer_data+wValue, LE, NUM_CONFIGURATIONS
-				movf		USB_buffer_data+wValue, W, BANKED
-				movwf		USB_curr_config, BANKED
-				select
-					case 0
-						movlw		ADDRESS_STATE
-						movwf		USB_USWSTAT, BANKED
-						break
-					default
-						movlw		CONFIG_STATE
-						movwf		USB_USWSTAT, BANKED
-						movlw		0x08
-						banksel		BD1IBC
-						movwf		BD1IBC, BANKED		; set EP1 IN byte count to 8 
-						movlw		low (USB_Buffer+0x10)
-						movwf		BD1IAL, BANKED		; set EP1 IN buffer address
-						movlw		high (USB_Buffer+0x10)
-						movwf		BD1IAH, BANKED
-						movlw		0x48
-						movwf		BD1IST, BANKED		; clear UOWN bit (PIC can write EP1 IN buffer)
-						movlw		ENDPT_IN_ONLY
-						movwf		UEP1, ACCESS		; enable EP1 for interrupt in transfers
-				ends
-				banksel		BD0IBC
-				clrf		BD0IBC, BANKED		; set byte count to 0
-				movlw		0xC8
-				movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-			otherwise
-				bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-			endi
+			movf	USB_buffer_data+wValue,W,BANKED
+			sublw	NUM_CONFIGURATIONS
+			btfss	STATUS,C,ACCESS
+			goto	StandardRequestsError	; USB_buffer_data+wValue > NUM_CONFIGURATIONS
+
+			movf	USB_buffer_data+wValue, W, BANKED
+			movwf	USB_curr_config, BANKED
+			select
+				case 0
+					movlw		ADDRESS_STATE
+					movwf		USB_USWSTAT, BANKED
+					break
+				default
+					movlw		CONFIG_STATE
+					movwf		USB_USWSTAT, BANKED
+					movlw		0x08
+					banksel		BD1IBC
+					movwf		BD1IBC, BANKED		; set EP1 IN byte count to 8 
+					movlw		low (USB_Buffer+0x10)
+					movwf		BD1IAL, BANKED		; set EP1 IN buffer address
+					movlw		high (USB_Buffer+0x10)
+					movwf		BD1IAH, BANKED
+					movlw		0x48
+					movwf		BD1IST, BANKED	; clear UOWN bit (PIC can write EP1 IN buffer)
+					movlw		ENDPT_IN_ONLY
+					movwf		UEP1, ACCESS	; enable EP1 for interrupt in transfers
+			ends
+			banksel		BD0IBC
+			clrf		BD0IBC, BANKED		; set byte count to 0
+			movlw		0xC8
+			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
 			break
 		case GET_INTERFACE
 			movf		USB_USWSTAT, W, BANKED

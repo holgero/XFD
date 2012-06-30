@@ -15,7 +15,6 @@
 ;  added to work around gpasm macro limitations
 ;  (gpasm macros can' tbe passed relops like '==' and '>')
 #define EQ 0
-#define LE 4
 #define LT 5
 
 ; Work-around macros
@@ -280,7 +279,7 @@ _casecount ++
 ; which are described on pp. 542-546 of the second edition of Programming and 
 ; Customizing PICmicro Microcontrollers.
 ; -------------------------------------------------------------------------------
-ifl			macro		var,relop,lit
+ifl			macro		var,lit
 
 			vrbl	_ifclausestack, _ifstackptr, _ifclausecount
 			vrbl	_ifstack, _ifstackptr, _ifcount
@@ -288,19 +287,9 @@ ifl			macro		var,relop,lit
 _ifstackptr ++
 _ifclausecount = 0
 	target	_if, _ifstack#v(_ifstackptr - 1), _ifclausecount
-		if (relop == EQ)				
 			movf	var,W,BANKED
 			sublw	lit
 			btfss	STATUS,Z,ACCESS
-		else
-		if (relop == LE)			
-			movf	var,W,BANKED
-			sublw	lit
-			btfss	STATUS,C,ACCESS
-		else
-			error "Illegal relational operator in ifl statement."
-		endif
-		endif
 		brnch	_if, _ifstack#v(_ifstackptr - 1), (_ifclausecount + 1)
 _ifcount ++
 _ifclausecount ++
