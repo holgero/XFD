@@ -47,14 +47,13 @@
 ;**************************************************************
 ; imported subroutines
 	extern	InitUSB
-	extern	WaitUSBConfigured
+	extern	WaitConfiguredUSB
 	extern	ServiceUSB
 	extern	SendKeyBuffer
+
 ;**************************************************************
 ; imported variables
 	extern	Key_buffer
-	extern	USB_USWSTAT
-	extern	LED_states
 
 ;**************************************************************
 ; local definitions
@@ -85,7 +84,7 @@ lowprio_interruptvector	ORG	0x0818
 
 ;**************************************************************
 ; main code
-main_code		CODE	0x01566
+main_code		CODE	0x01600
 Main
 	banksel		COUNTER
 	for COUNTER, 0x01, 0x17		; do nothing for 16-17 us
@@ -110,24 +109,7 @@ Main
 		
 	call		InitUSB		; initialize the USB registers and serial interface engine
 
-	repeat
-		call		ServiceUSB	; service USB requests...
-		banksel		PORTA
-		btg		PORTA, 1, ACCESS
-		banksel		USB_USWSTAT
-	until USB_USWSTAT, EQ, CONFIG_STATE	; ...until the host configures the peripheral
-
-	; initialize our state
-	banksel		LED_states
-	clrf		LED_states, BANKED
-	clrf		Key_buffer, BANKED
-	clrf		Key_buffer+1, BANKED
-	clrf		Key_buffer+2, BANKED
-	clrf		Key_buffer+3, BANKED
-	clrf		Key_buffer+4, BANKED
-	clrf		Key_buffer+5, BANKED
-	clrf		Key_buffer+6, BANKED
-	clrf		Key_buffer+7, BANKED
+	call		WaitConfiguredUSB
 
 	banksel		COUNTER
 	clrf		COUNTER, BANKED

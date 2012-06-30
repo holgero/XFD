@@ -13,12 +13,11 @@
 	global	InitUSB
 	global	ServiceUSB
 	global	SendKeyBuffer
+	global	WaitConfiguredUSB
 
 ;**************************************************************
 ; exported variables
 	global	Key_buffer
-	global	USB_USWSTAT
-	global	LED_states
 
 ;**************************************************************
 ; local data
@@ -1097,6 +1096,26 @@ SendKeyBuffer
 	xorlw		0x40			; toggle the DATA01 bit
 	iorlw		0x88			; set UOWN and DTS bits
 	movwf		BD1IST, BANKED		; send packet
+	return
+
+WaitConfiguredUSB
+
+	repeat
+		call		ServiceUSB	; service USB requests...
+		banksel		PORTA
+		btg		PORTA, 1, ACCESS
+		banksel		USB_USWSTAT
+	until USB_USWSTAT, EQ, CONFIG_STATE	; ...until the host configures the peripheral
+	banksel		LED_states
+	clrf		LED_states, BANKED
+	clrf		Key_buffer, BANKED
+	clrf		Key_buffer+1, BANKED
+	clrf		Key_buffer+2, BANKED
+	clrf		Key_buffer+3, BANKED
+	clrf		Key_buffer+4, BANKED
+	clrf		Key_buffer+5, BANKED
+	clrf		Key_buffer+6, BANKED
+	clrf		Key_buffer+7, BANKED
 	return
 
 			END
