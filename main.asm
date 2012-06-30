@@ -3,6 +3,7 @@
 ; main routine and configuration
 #include <p18f2550.inc>
 #include "usb_defs.inc"
+#include "tableread.inc"
 
 ;**************************************************************
 ; configuration
@@ -130,7 +131,7 @@ mainLoop
 	movwf		FSR0H, ACCESS
 	movlw		low (Key_buffer+2)
 	movwf		FSR0L, ACCESS		; set FSR0 to point to start of keycodes in Key_buffer
-	call		GetNextKeycode		; get the next keycode and...
+	tableread	KeycodeTable, COUNTER	; get the next keycode and...
 	movwf		POSTINC0		; ...put it into Key_buffer
 	clrf		INDF0
 	incf		COUNTER, F, BANKED	; increment COUNTER...
@@ -139,25 +140,6 @@ mainLoop
 	call		SendKeyBuffer
 
 	goto mainLoop
-
-GetNextKeycode
-	movlw		upper KeycodeTable
-	movwf		TBLPTRU, ACCESS
-	movlw		high KeycodeTable
-	movwf		TBLPTRH, ACCESS
-	movlw		low KeycodeTable
-	banksel		COUNTER
-	addwf		COUNTER, W, BANKED
-	btfss		STATUS, C, ACCESS
-	goto		addressCalculated
-	incfsz		TBLPTRH, F, ACCESS
-	goto		addressCalculated
-	incf		TBLPTRU, F, ACCESS
-addressCalculated
-	movwf		TBLPTRL, ACCESS
-	tblrd*
-	movf		TABLAT, W, ACCESS
-	return
 
 KeycodeTable
 db	0x09, 0x12	; USB keycode for 'f', USB keycode for 'o'

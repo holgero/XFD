@@ -6,6 +6,7 @@
 ; includes
 #include <p18f2550.inc>
 #include "usb_defs.inc"
+#include "tableread.inc"
 #include "ENGR2210.inc"
 
 ;**************************************************************
@@ -45,22 +46,7 @@ Key_buffer		RES	8
 usb_code		CODE	0x00082a
 
 Descriptor
-	movlw		upper Descriptor_begin
-	movwf		TBLPTRU, ACCESS
-	movlw		high Descriptor_begin
-	movwf		TBLPTRH, ACCESS
-	movlw		low Descriptor_begin
-	banksel		USB_desc_ptr
-	addwf		USB_desc_ptr, W, BANKED
-	ifset STATUS, C, ACCESS
-		incf	TBLPTRH, F, ACCESS
-		ifset STATUS, Z, ACCESS
-			incf	TBLPTRU, F, ACCESS
-		endi
-	endi
-	movwf		TBLPTRL, ACCESS
-	tblrd*
-	movf		TABLAT, W
+	tableread	Descriptor_begin, USB_desc_ptr
 	return
 
 Descriptor_begin
