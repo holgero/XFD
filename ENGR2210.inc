@@ -14,7 +14,6 @@
 ; Relational Operator definitions
 ;  added to work around gpasm macro limitations
 ;  (gpasm macros can' tbe passed relops like '==' and '>')
-#define EQ 0
 #define LT 5
 
 ; Work-around macros
@@ -369,20 +368,10 @@ _ifclausecount ++
 ; which are described on pp. 542-546 of the second edition of Programming and 
 ; Customizing PICmicro Microcontrollers.
 ; -------------------------------------------------------------------------------
-andiff		macro		var1,relop,var2
-		if (relop == EQ)
-			movf	var1,W,BANKED
-			subwf	var2,W,BANKED
-			btfss	STATUS,Z,ACCESS
-		else
-		if (relop == LT)
-			movf	var2,W,BANKED
-			subwf	var1,W,BANKED
-			btfsc	STATUS,C,ACCESS
-		else
-			error "Illegal relational operator in andiff statement."
-		endif
-		endif
+andiffLT	macro	var1,var2
+		movf	var2,W,BANKED
+		subwf	var1,W,BANKED
+		btfsc	STATUS,C,ACCESS
 		brnch	_if, _ifstack#v(_ifstackptr - 1), _ifclausecount
 		endm
 

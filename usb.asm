@@ -576,7 +576,7 @@ StandardRequests
 					call		Descriptor		; get descriptor length
 					movwf		USB_bytes_left, BANKED
 					ifl USB_buffer_data+(wLength+1), 0
-					andiff USB_buffer_data+wLength, LT, USB_bytes_left
+					andiffLT USB_buffer_data+wLength, USB_bytes_left
 						movf		USB_buffer_data+wLength, W, BANKED
 						movwf		USB_bytes_left, BANKED
 					endi
@@ -600,7 +600,7 @@ StandardRequests
 						movlw		0x02
 						subwf		USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
 						ifl USB_buffer_data+(wLength+1), 0
-						andiff USB_buffer_data+wLength, LT, USB_bytes_left
+						andiffLT USB_buffer_data+wLength, USB_bytes_left
 							movf		USB_buffer_data+wLength, W, BANKED
 							movwf		USB_bytes_left, BANKED
 						endi
@@ -630,7 +630,7 @@ StandardRequests
 						call		Descriptor	; get descriptor length
 						movwf		USB_bytes_left, BANKED
 						ifl USB_buffer_data+(wLength+1), 0
-						andiff USB_buffer_data+wLength, LT, USB_bytes_left
+						andiffLT USB_buffer_data+wLength, USB_bytes_left
 							movf		USB_buffer_data+wLength, W, BANKED
 							movwf		USB_bytes_left, BANKED
 						endi
@@ -654,7 +654,7 @@ StandardRequests
 						call		Descriptor	; get descriptor length
 						movwf		USB_bytes_left, BANKED
 						ifl USB_buffer_data+(wLength+1), 0
-						andiff USB_buffer_data+wLength, LT, USB_bytes_left
+						andiffLT USB_buffer_data+wLength, USB_bytes_left
 							movf		USB_buffer_data+wLength, W, BANKED
 							movwf		USB_bytes_left, BANKED
 						endi
@@ -678,7 +678,7 @@ StandardRequests
 					ifclr USB_error_flags, 0, BANKED
 						movwf		USB_desc_ptr, BANKED
 						ifl USB_buffer_data+(wLength+1), 0
-						andiff USB_buffer_data+wLength, LT, USB_bytes_left
+						andiffLT USB_buffer_data+wLength, USB_bytes_left
 							movf		USB_buffer_data+wLength, W, BANKED
 							movwf		USB_bytes_left, BANKED
 						endi
