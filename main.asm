@@ -46,10 +46,13 @@
         config EBTR2    = OFF
 ;**************************************************************
 ; imported subroutines
+; usb.asm
 	extern	InitUSB
 	extern	WaitConfiguredUSB
 	extern	ServiceUSB
 	extern	SendKeyBuffer
+; wait.asm
+	extern	waitMilliSeconds
 
 ;**************************************************************
 ; imported variables
@@ -69,16 +72,8 @@ COUNTER			RES	1
 ; vectors
 resetvector		ORG	0x0800
 	goto	Main
-	nop
-	nop
 hiprio_interruptvector	ORG	0x0808
 	goto	$
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
 lowprio_interruptvector	ORG	0x0818
 	goto	$
 
@@ -86,9 +81,8 @@ lowprio_interruptvector	ORG	0x0818
 ; main code
 main_code		CODE	0x01600
 Main
-	banksel		COUNTER
-	for COUNTER, 0x01, 0x17		; do nothing for 16-17 us
-	next COUNTER
+	movlw	1			; wait a msec
+	call	waitMilliSeconds	
 	clrf	PORTA, ACCESS
 	movlw	0x0F
 	movwf	ADCON1, ACCESS		; set up PORTA to be digital I/Os
