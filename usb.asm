@@ -13,11 +13,13 @@
 	global	InitUSB
 	global	ServiceUSB
 	global	SendKeyBuffer
-	global	WaitUSBConfigured
 
 ;**************************************************************
 ; exported variables
 	global	Key_buffer
+	global	USB_USWSTAT
+	global	LED_states
+	global	COUNTER
 
 ;**************************************************************
 ; local data
@@ -37,14 +39,15 @@ USB_loop_index		RES	1
 USB_packet_length	RES	1
 USB_USTAT		RES	1
 USB_USWSTAT		RES	1
+COUNTER			RES	1
 LED_states		RES	1
-Key_buffer		RES	2
+Key_buffer		RES	8
 
 ;**************************************************************
 ; code section
-			CODE
+usb_code		CODE	0x00082a
 
-descriptor
+Descriptor
 	movlw		upper Descriptor_begin
 	movwf		TBLPTRU, ACCESS
 	movlw		high Descriptor_begin
@@ -217,28 +220,6 @@ InitUSB
 	movlw	0x01
 	movwf	PORTD, ACCESS		; set bit zero to indicate Powered status
 #endif
-	return
-
-WaitUSBConfigured
-	repeat
-		call		ServiceUSB	; service USB requests...
-		banksel		PORTA
-		btg		PORTA, 1, ACCESS
-		banksel		USB_USWSTAT
-	until USB_USWSTAT, EQ, CONFIG_STATE	; ...until the host configures the peripheral
-
-	; initialize our state
-	banksel		LED_states
-	clrf		LED_states, BANKED
-	clrf		Key_buffer, BANKED
-	clrf		Key_buffer+1, BANKED
-	clrf		Key_buffer+2, BANKED
-	clrf		Key_buffer+3, BANKED
-	clrf		Key_buffer+4, BANKED
-	clrf		Key_buffer+5, BANKED
-	clrf		Key_buffer+6, BANKED
-	clrf		Key_buffer+7, BANKED
-
 	return
 
 ServiceUSB
@@ -653,7 +634,7 @@ StandardRequests
 				case DEVICE
 					movlw		low (Device-Descriptor_begin)
 					movwf		USB_desc_ptr, BANKED
-					call		descriptor		; get descriptor length
+					call		Descriptor		; get descriptor length
 					movwf		USB_bytes_left, BANKED
 					ifl USB_buffer_data+(wLength+1), EQ, 0
 					andiff USB_buffer_data+wLength, LT, USB_bytes_left
@@ -675,7 +656,7 @@ StandardRequests
 					ifclr USB_error_flags, 0, BANKED
 						addlw		0x02		; add offset for wTotalLength
 						movwf		USB_desc_ptr, BANKED
-						call		descriptor	; get total descriptor length
+						call		Descriptor	; get total descriptor length
 						movwf		USB_bytes_left, BANKED
 						movlw		0x02
 						subwf		USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
@@ -707,7 +688,7 @@ StandardRequests
 					ends
 					ifclr USB_error_flags, 0, BANKED
 						movwf		USB_desc_ptr, BANKED
-						call		descriptor	; get descriptor length
+						call		Descriptor	; get descriptor length
 						movwf		USB_bytes_left, BANKED
 						ifl USB_buffer_data+(wLength+1), EQ, 0
 						andiff USB_buffer_data+wLength, LT, USB_bytes_left
@@ -731,7 +712,7 @@ StandardRequests
 					ends
 					ifclr USB_error_flags, 0, BANKED
 						movwf		USB_desc_ptr, BANKED
-						call		descriptor	; get descriptor length
+						call		Descriptor	; get descriptor length
 						movwf		USB_bytes_left, BANKED
 						ifl USB_buffer_data+(wLength+1), EQ, 0
 						andiff USB_buffer_data+wLength, LT, USB_bytes_left
@@ -757,8 +738,6 @@ StandardRequests
 					ends
 					ifclr USB_error_flags, 0, BANKED
 						movwf		USB_desc_ptr, BANKED
-						call		descriptor	; get descriptor length
-						movwf		USB_bytes_left, BANKED
 						ifl USB_buffer_data+(wLength+1), EQ, 0
 						andiff USB_buffer_data+wLength, LT, USB_bytes_left
 							movf		USB_buffer_data+wLength, W, BANKED
@@ -1077,7 +1056,7 @@ SendDescriptorPacket
 	movwf		FSR0L, ACCESS			; ...into FSR0
 	banksel		USB_loop_index
 	forlf USB_loop_index, 1, USB_packet_length
-		call		descriptor		; get next byte of descriptor being sent
+		call		Descriptor		; get next byte of descriptor being sent
 		movwf		POSTINC0		; copy to EP0 IN buffer, and increment FSR0
 		incf		USB_desc_ptr, F, BANKED	; increment the descriptor pointer
 	next USB_loop_index

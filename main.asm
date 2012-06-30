@@ -53,6 +53,9 @@
 ;**************************************************************
 ; imported variables
 	extern	Key_buffer
+	extern	USB_USWSTAT
+	extern	LED_states
+	extern	COUNTER
 
 ;**************************************************************
 ; local definitions
@@ -62,31 +65,48 @@
 ;**************************************************************
 ; local data
 main_udata		UDATA
-COUNTER			RES	1
+; TODO: move COUNTER back here
+;COUNTER			RES	1
 
 ;**************************************************************
 ; vectors
-resetvector		ORG	0x0000
-	goto	main
-hiprio_interruptvector	ORG	0x0008
+resetvector		ORG	0x0800
+	goto	Main
+	nop
+	nop
+hiprio_interruptvector	ORG	0x0808
 	goto	$
-lowprio_interruptvector	ORG	0x0018
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+lowprio_interruptvector	ORG	0x0818
 	goto	$
 
 ;**************************************************************
 ; main code
-			CODE
-main
+main_code		CODE	0x01566
+Main
 	banksel		COUNTER
 	for COUNTER, 0x01, 0x17		; do nothing for 16-17 us
 	next COUNTER
 	clrf	PORTA, ACCESS
 	movlw	0x0F
 	movwf	ADCON1, ACCESS		; set up PORTA to be digital I/Os
+	; TODO: Remove spurious setting of trisa
+	movlw	0xff
+	movwf	TRISA, ACCESS           ; make port A all logic inputs for now
+
 	movlw	b'11110000'		; PORTA 4 lsbs go to LEDs 1 - 4
 	movwf	TRISA, ACCESS
+	;TODO: I am quite sure it is TRISB, not PORTB
+	;movf	TRISB, W, ACCESS
 	movf	PORTB, W, ACCESS
 	iorlw	b'00010000'		; make RB4 an input (SW2)
+	;TODO: I am quite sure it is TRISB, not PORTB
+	;movwf	TRISB, ACCESS
 	movwf	PORTB, ACCESS
 
         movlw		TIMER0H_VAL
@@ -99,10 +119,28 @@ main
 		
 	call		InitUSB		; initialize the USB registers and serial interface engine
 
-	call		WaitUSBConfigured
+	repeat
+		call		ServiceUSB	; service USB requests...
+		banksel		PORTA
+		btg		PORTA, 1, ACCESS
+		banksel		USB_USWSTAT
+	until USB_USWSTAT, EQ, CONFIG_STATE	; ...until the host configures the peripheral
 
 	banksel		COUNTER
 	clrf		COUNTER, BANKED
+
+	; initialize our state
+	; TODO: this might be necessary
+	; banksel	LED_states
+	clrf		LED_states, BANKED
+	clrf		Key_buffer, BANKED
+	clrf		Key_buffer+1, BANKED
+	clrf		Key_buffer+2, BANKED
+	clrf		Key_buffer+3, BANKED
+	clrf		Key_buffer+4, BANKED
+	clrf		Key_buffer+5, BANKED
+	clrf		Key_buffer+6, BANKED
+	clrf		Key_buffer+7, BANKED
 
 	repeat
 		repeat
@@ -115,14 +153,11 @@ main
 		movwf		TMR0L, ACCESS
 		banksel		BD1IST
 		ifclr BD1IST, UOWN, BANKED			; check to see if the PIC owns the EP1 IN buffer
+		andifset PORTB, 4, ACCESS			; see if SW2
 			movlw		high (Key_buffer+2)
 			movwf		FSR0H, ACCESS
 			movlw		low (Key_buffer+2)
 			movwf		FSR0L, ACCESS		; set FSR0 to point to start of keycodes in Key_buffer
-			ifset PORTB, 4, ACCESS			; see if SW2
-				movlw		0x39		; USB keycode for CAPS LOCK
-				movwf		POSTINC0	; put CAPS LOCK keycode into Key_buffer
-			endi
 			call		GetNextKeycode		; get the next keycode and...
 			movwf		POSTINC0		; ...put it into Key_buffer
 			clrf		INDF0
