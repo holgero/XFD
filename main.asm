@@ -120,19 +120,23 @@ mainLoop
 	movlw		TIMER0L_VAL
 	movwf		TMR0L, ACCESS
 
-	btfss		PORTB, 4, ACCESS	; keys requested?
-	goto		mainLoop
-
+	; check to see if the PIC owns the EP1 IN buffer
 	banksel		BD1IST
-	btfsc		BD1IST, UOWN, BANKED	; check to see if the PIC owns the EP1 IN buffer
+	btfsc		BD1IST, UOWN, BANKED	
 	goto		mainLoop
 
+	; set FSR0 to point to start of keycodes in Key_buffer
 	movlw		high (Key_buffer+2)
 	movwf		FSR0H, ACCESS
 	movlw		low (Key_buffer+2)
-	movwf		FSR0L, ACCESS		; set FSR0 to point to start of keycodes in Key_buffer
+	movwf		FSR0L, ACCESS
+
+	btfss		PORTB, 4, ACCESS	; keys requested?
+	goto		sendNothing
+
 	tableread	KeycodeTable, COUNTER	; get the next keycode and...
 	movwf		POSTINC0		; ...put it into Key_buffer
+sendNothing
 	clrf		INDF0
 	incf		COUNTER, F, BANKED	; increment COUNTER...
 	movlw		0x07
