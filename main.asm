@@ -55,7 +55,6 @@
 	extern	Key_buffer
 	extern	USB_USWSTAT
 	extern	LED_states
-	extern	COUNTER
 
 ;**************************************************************
 ; local definitions
@@ -65,8 +64,7 @@
 ;**************************************************************
 ; local data
 main_udata		UDATA
-; TODO: move COUNTER back here
-;COUNTER			RES	1
+COUNTER			RES	1
 
 ;**************************************************************
 ; vectors
@@ -95,19 +93,12 @@ Main
 	clrf	PORTA, ACCESS
 	movlw	0x0F
 	movwf	ADCON1, ACCESS		; set up PORTA to be digital I/Os
-	; TODO: Remove spurious setting of trisa
-	movlw	0xff
-	movwf	TRISA, ACCESS           ; make port A all logic inputs for now
 
 	movlw	b'11110000'		; PORTA 4 lsbs go to LEDs 1 - 4
 	movwf	TRISA, ACCESS
-	;TODO: I am quite sure it is TRISB, not PORTB
-	;movf	TRISB, W, ACCESS
-	movf	PORTB, W, ACCESS
+	movf	TRISB, W, ACCESS
 	iorlw	b'00010000'		; make RB4 an input (SW2)
-	;TODO: I am quite sure it is TRISB, not PORTB
-	;movwf	TRISB, ACCESS
-	movwf	PORTB, ACCESS
+	movwf	TRISB, ACCESS
 
         movlw		TIMER0H_VAL
 	movwf		TMR0H, ACCESS
@@ -126,12 +117,8 @@ Main
 		banksel		USB_USWSTAT
 	until USB_USWSTAT, EQ, CONFIG_STATE	; ...until the host configures the peripheral
 
-	banksel		COUNTER
-	clrf		COUNTER, BANKED
-
 	; initialize our state
-	; TODO: this might be necessary
-	; banksel	LED_states
+	banksel		LED_states
 	clrf		LED_states, BANKED
 	clrf		Key_buffer, BANKED
 	clrf		Key_buffer+1, BANKED
@@ -141,6 +128,9 @@ Main
 	clrf		Key_buffer+5, BANKED
 	clrf		Key_buffer+6, BANKED
 	clrf		Key_buffer+7, BANKED
+
+	banksel		COUNTER
+	clrf		COUNTER, BANKED
 
 	repeat
 		repeat

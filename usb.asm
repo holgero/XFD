@@ -19,7 +19,6 @@
 	global	Key_buffer
 	global	USB_USWSTAT
 	global	LED_states
-	global	COUNTER
 
 ;**************************************************************
 ; local data
@@ -39,7 +38,6 @@ USB_loop_index		RES	1
 USB_packet_length	RES	1
 USB_USTAT		RES	1
 USB_USWSTAT		RES	1
-COUNTER			RES	1
 LED_states		RES	1
 Key_buffer		RES	8
 
