@@ -390,21 +390,22 @@ StandardRequests
 							bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
 							break
 						case CONFIG_STATE
-							ifl USB_buffer_data+wIndex, LT, NUM_INTERFACES
-								banksel		BD0IAH
-								movf		BD0IAH, W, BANKED
-								movwf		FSR0H, ACCESS
-								movf		BD0IAL, W, BANKED	; get buffer pointer
-								movwf		FSR0L, ACCESS
-								clrf		POSTINC0
-								clrf		INDF0
-								movlw		0x02
-								movwf		BD0IBC, BANKED		; set byte count to 2
-								movlw		0xC8
-								movwf		BD0IST, BANKED					; send packet as DATA1, set UOWN bit
-							otherwise
-								bsf			UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-							endi
+							movlw	NUM_INTERFACES
+							subwf	USB_buffer_data+wIndex,W,BANKED
+							btfsc	STATUS,C,ACCESS
+							goto	StandardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
+
+							banksel	BD0IAH
+							movf	BD0IAH, W, BANKED
+							movwf	FSR0H, ACCESS
+							movf	BD0IAL, W, BANKED	; get buffer pointer
+							movwf	FSR0L, ACCESS
+							clrf	POSTINC0
+							clrf	INDF0
+							movlw	0x02
+							movwf	BD0IBC, BANKED		; set byte count to 2
+							movlw	0xC8
+							movwf	BD0IST, BANKED	; send packet as DATA1, set UOWN bit
 							break
 					ends
 					break
@@ -741,44 +742,46 @@ StandardRequests
 			movf		USB_USWSTAT, W, BANKED
 			select
 				case CONFIG_STATE
-					ifl USB_buffer_data+wIndex, LT, NUM_INTERFACES
-						banksel		BD0IAH
-						movf		BD0IAH, W, BANKED
-						movwf		FSR0H, ACCESS
-						movf		BD0IAL, W, BANKED	; get buffer pointer
-						movwf		FSR0L, ACCESS
-						clrf		INDF0		; always send back 0 for bAlternateSetting
-						movlw		0x01
-						movwf		BD0IBC, BANKED	; set byte count to 1
-						movlw		0xC8
-						movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
-					otherwise
-						bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-					endi
+					movlw	NUM_INTERFACES
+					subwf	USB_buffer_data+wIndex,W,BANKED
+					btfsc	STATUS,C,ACCESS
+					goto	StandardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
+
+					banksel	BD0IAH
+					movf	BD0IAH, W, BANKED
+					movwf	FSR0H, ACCESS
+					movf	BD0IAL, W, BANKED	; get buffer pointer
+					movwf	FSR0L, ACCESS
+					clrf	INDF0		; always send back 0 for bAlternateSetting
+					movlw	0x01
+					movwf	BD0IBC, BANKED	; set byte count to 1
+					movlw	0xC8
+					movwf	BD0IST, BANKED	; send packet as DATA1, set UOWN bit
 					break
 				default
-					bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
+					bsf	UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
 			ends
 			break
 		case SET_INTERFACE
 			movf		USB_USWSTAT, W, BANKED
 			select
 				case CONFIG_STATE
-					ifl USB_buffer_data+wIndex, LT, NUM_INTERFACES
-						movf		USB_buffer_data+wValue, W, BANKED
-						select
-							case 0	; currently support only bAlternateSetting of 0
-								banksel		BD0IBC
-								clrf		BD0IBC, BANKED	; set byte count to 0
-								movlw		0xC8
-								movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
-								break
-							default
-								bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-						ends
-					otherwise
-						bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-					endi
+					movlw	NUM_INTERFACES
+					subwf	USB_buffer_data+wIndex,W,BANKED
+					btfsc	STATUS,C,ACCESS
+					goto	StandardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
+
+					movf		USB_buffer_data+wValue, W, BANKED
+					select
+						case 0	; currently support only bAlternateSetting of 0
+							banksel		BD0IBC
+							clrf		BD0IBC, BANKED	; set byte count to 0
+							movlw		0xC8
+							movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
+							break
+						default
+							bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
+					ends
 					break
 				default
 					bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
@@ -791,6 +794,11 @@ StandardRequests
 			break
 	ends
 	return
+
+StandardRequestsError
+	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
+	return
+
 
 ClassRequests
 	movf		USB_buffer_data+bRequest, W, BANKED
@@ -957,13 +965,22 @@ ProcessOutToken
 
 SendDescriptorPacket
 	banksel		USB_bytes_left
-	ifl USB_bytes_left, LT, 8
-		movlw		NO_REQUEST
-		movwf		USB_dev_req, BANKED	; sending a short packet, so clear device request
-		movf		USB_bytes_left, W, BANKED
-	otherwise
-		movlw		0x08
-	endi
+	
+	movlw		0x08
+	subwf		USB_bytes_left,W,BANKED
+	btfsc		STATUS,C,ACCESS
+	goto		longDescriptor		; bytes_left > 8
+
+	movlw		NO_REQUEST
+	movwf		USB_dev_req, BANKED	; sending a short packet, so clear device request
+	movf		USB_bytes_left, W, BANKED
+	goto		shortDescriptor
+
+longDescriptor
+	movlw		0x08
+
+shortDescriptor
+	; bytes to send now in W
 	subwf		USB_bytes_left, F, BANKED
 	movwf		USB_packet_length, BANKED
 	banksel		BD0IBC

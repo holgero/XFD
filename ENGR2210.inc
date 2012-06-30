@@ -298,13 +298,7 @@ _ifclausecount = 0
 			sublw	lit
 			btfss	STATUS,C,ACCESS
 		else
-		if (relop == LT)
-			movlw	lit
-			subwf	var,W,BANKED
-			btfsc	STATUS,C,ACCESS
-		else
 			error "Illegal relational operator in ifl statement."
-		endif
 		endif
 		endif
 		brnch	_if, _ifstack#v(_ifstackptr - 1), (_ifclausecount + 1)
