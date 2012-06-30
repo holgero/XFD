@@ -56,7 +56,9 @@
 
 ;**************************************************************
 ; imported variables
+; usb.asm
 	extern	Key_buffer
+	extern	LED_states
 
 ;**************************************************************
 ; local definitions
@@ -119,6 +121,12 @@ mainLoop
 	movwf		TMR0H, ACCESS
 	movlw		TIMER0L_VAL
 	movwf		TMR0L, ACCESS
+
+	; set RA1 to reflect the new state of the CAPS LOCK LED
+	bsf		PORTA, 1, ACCESS
+	banksel		LED_states
+	btfss		LED_states, 1, BANKED
+	bcf		PORTA, 1, ACCESS
 
 	; check to see if the PIC owns the EP1 IN buffer
 	banksel		BD1IST
