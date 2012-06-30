@@ -987,11 +987,23 @@ SendDescriptorPacket
 	movf		BD0IAL, W, BANKED
 	movwf		FSR0L, ACCESS			; ...into FSR0
 	banksel		USB_loop_index
-	forlf USB_loop_index, 1, USB_packet_length
-		call		Descriptor		; get next byte of descriptor being sent
-		movwf		POSTINC0		; copy to EP0 IN buffer, and increment FSR0
-		incf		USB_desc_ptr, F, BANKED	; increment the descriptor pointer
-	next USB_loop_index
+
+	movlw		1
+	movwf		USB_loop_index,BANKED
+sendNextDescriptorByte
+	movf		USB_loop_index,W,BANKED
+	subwf		USB_packet_length,W,BANKED
+	btfss		STATUS,C,ACCESS
+	goto		descriptorSent
+
+	call		Descriptor		; get next byte of descriptor being sent
+	movwf		POSTINC0		; copy to EP0 IN buffer, and increment FSR0
+	incf		USB_desc_ptr, F, BANKED	; increment the descriptor pointer
+
+	incf		USB_loop_index,F,BANKED
+	goto		sendNextDescriptorByte
+descriptorSent
+
 	banksel		BD0IST
 	movlw		0x40
 	xorwf		BD0IST, W, BANKED	; toggle the DATA01 bit
@@ -1035,12 +1047,16 @@ SendKeyBuffer
 
 WaitConfiguredUSB
 
-	repeat
-		call		ServiceUSB	; service USB requests...
-		banksel		PORTA
-		btg		PORTA, 1, ACCESS
-		banksel		USB_USWSTAT
-	until USB_USWSTAT, EQ, CONFIG_STATE	; ...until the host configures the peripheral
+notYetConfitured
+	call	ServiceUSB		; service USB requests...
+	banksel	PORTA
+	btg	PORTA, 1, ACCESS
+	banksel	USB_USWSTAT
+	movf	USB_USWSTAT,W,BANKED
+	sublw	CONFIG_STATE
+	btfss	STATUS,Z,ACCESS
+	goto	notYetConfitured	; ...until the host configures the peripheral
+
 	banksel		LED_states
 	clrf		LED_states, BANKED
 	clrf		Key_buffer, BANKED

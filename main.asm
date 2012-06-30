@@ -3,7 +3,6 @@
 ; main routine and configuration
 #include <p18f2550.inc>
 #include "usb_defs.inc"
-#include "ENGR2210.inc"
 
 ;**************************************************************
 ; configuration
@@ -108,31 +107,38 @@ Main
 	banksel		COUNTER
 	clrf		COUNTER, BANKED
 
-	repeat
-		repeat
-			call		ServiceUSB	; service USB requests...
-		untilset INTCON, T0IF, ACCESS		; ...until Timer0 goes off
-		bcf		INTCON, T0IF, ACCESS	; clear Timer0 interrupt flag
-		movlw		TIMER0H_VAL
-		movwf		TMR0H, ACCESS
-		movlw		TIMER0L_VAL
-		movwf		TMR0L, ACCESS
-		banksel		BD1IST
-		ifclr BD1IST, UOWN, BANKED			; check to see if the PIC owns the EP1 IN buffer
-		andifset PORTB, 4, ACCESS			; see if SW2
-			movlw		high (Key_buffer+2)
-			movwf		FSR0H, ACCESS
-			movlw		low (Key_buffer+2)
-			movwf		FSR0L, ACCESS		; set FSR0 to point to start of keycodes in Key_buffer
-			call		GetNextKeycode		; get the next keycode and...
-			movwf		POSTINC0		; ...put it into Key_buffer
-			clrf		INDF0
-			incf		COUNTER, F, BANKED	; increment COUNTER...
-			movlw		0x07
-			andwf		COUNTER, F, BANKED	; ...modulo 8
-			call		SendKeyBuffer
-		endi
-	forever
+mainLoop
+	; service usb requests as long as timer0 runs
+	call		ServiceUSB
+	btfss		INTCON, T0IF, ACCESS
+	goto		mainLoop
+
+	bcf		INTCON, T0IF, ACCESS	; clear Timer0 interrupt flag
+	movlw		TIMER0H_VAL
+	movwf		TMR0H, ACCESS
+	movlw		TIMER0L_VAL
+	movwf		TMR0L, ACCESS
+
+	btfss		PORTB, 4, ACCESS	; keys requested?
+	goto		mainLoop
+
+	banksel		BD1IST
+	btfsc		BD1IST, UOWN, BANKED	; check to see if the PIC owns the EP1 IN buffer
+	goto		mainLoop
+
+	movlw		high (Key_buffer+2)
+	movwf		FSR0H, ACCESS
+	movlw		low (Key_buffer+2)
+	movwf		FSR0L, ACCESS		; set FSR0 to point to start of keycodes in Key_buffer
+	call		GetNextKeycode		; get the next keycode and...
+	movwf		POSTINC0		; ...put it into Key_buffer
+	clrf		INDF0
+	incf		COUNTER, F, BANKED	; increment COUNTER...
+	movlw		0x07
+	andwf		COUNTER, F, BANKED	; ...modulo 8
+	call		SendKeyBuffer
+
+	goto mainLoop
 
 GetNextKeycode
 	movlw		upper KeycodeTable
@@ -142,21 +148,21 @@ GetNextKeycode
 	movlw		low KeycodeTable
 	banksel		COUNTER
 	addwf		COUNTER, W, BANKED
-	ifset STATUS, C, ACCESS
-		incf		TBLPTRH, F, ACCESS
-		ifset STATUS, Z, ACCESS
-			incf		TBLPTRU, F, ACCESS
-		endi
-	endi
+	btfss		STATUS, C, ACCESS
+	goto		addressCalculated
+	incfsz		TBLPTRH, F, ACCESS
+	goto		addressCalculated
+	incf		TBLPTRU, F, ACCESS
+addressCalculated
 	movwf		TBLPTRL, ACCESS
 	tblrd*
 	movf		TABLAT, W, ACCESS
 	return
 
 KeycodeTable
-	db			0x09, 0x12	; USB keycode for 'f', USB keycode for 'o'
-	db			0x00, 0x12	; USB keycode for indicating no event, USB keycode for 'o'
-	db			0x05, 0x04	; USB keycode for 'b', USB keycode for 'a'
-	db			0x15, 0x2C	; USB keycode for 'r', USB keycode for ' '
+db	0x09, 0x12	; USB keycode for 'f', USB keycode for 'o'
+db	0x00, 0x12	; USB keycode for indicating no event, USB keycode for 'o'
+db	0x05, 0x04	; USB keycode for 'b', USB keycode for 'a'
+db	0x15, 0x2C	; USB keycode for 'r', USB keycode for ' '
 
 			END
