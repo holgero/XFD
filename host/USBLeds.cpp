@@ -33,10 +33,12 @@ void USBLeds::open() {
     return;
 }
 
+#define HID_SET_REPORT	0x09
+
 void USBLeds::send(char *bytes, int size) {
     int requesttype = USB_TYPE_CLASS | USB_RECIP_INTERFACE;
-    int request = 0x09;
-    int value = 0x200;
+    int request = HID_SET_REPORT;
+    int value = 0x00;
     int index = 0x00;
     int timeout = 100;
 

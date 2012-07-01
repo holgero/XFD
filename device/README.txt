@@ -29,6 +29,10 @@ Frei:
 27 RB6
 28 RB7
 
+Ergibt 6+5+8= 19 LEDs
+mal 20 mA -> 380 mA Strombedarf
+
+
 Erste Stufe: 3 LEDs: Rot Gelb Grün (nicht RGB!)
 
 RB0: Rot, RB1: Gelb, RB2: Grün
@@ -36,10 +40,7 @@ RB0: Rot, RB1: Gelb, RB2: Grün
 Report mit 3 bytes, 1: Rot, 2: Gelb, 3: Grün
 Verwende jeweils Bit 0 um die entsprechende LED zu schalten.
 
-Nehme PID 0xFF0C
-
-Ergibt 6+5+8= 19 LEDs
-mal 20 mA -> 380 mA Strombedarf
+Nehme PID 0xFF0C (/)
 
 TODO:
 * keyboard schnickschnack ausbauen
