@@ -57,8 +57,8 @@ db	0x10, 0x01			; bcdUSB (low byte), bcdUSB (high byte)
 db	0x00, 0x00			; bDeviceClass, bDeviceSubClass
 db	0x00, 0x08			; bDeviceProtocl, bMaxPacketSize
 db	0xD8, 0x04			; idVendor (low byte), idVendor (high byte)
-db	0x02, 0x00			; idProduct (low byte), idProduct (high byte)
-db	0x00, 0x00			; bcdDevice (low byte), bcdDevice (high byte)
+db	0x0C, 0xff			; idProduct (low byte), idProduct (high byte)
+db	0x01, 0x00			; bcdDevice (low byte), bcdDevice (high byte)
 db	0x01, 0x02			; iManufacturer, iProduct
 db	0x00, NUM_CONFIGURATIONS	; iSerialNumber (none), bNumConfigurations
 Configuration1
@@ -146,15 +146,14 @@ db	'c', 0x00
 db	'.', 0x00
 String2
 db	Descriptor_end-String2, STRING	; bLength, bDescriptorType
-db	'E', 0x00			; bString
-db	'N', 0x00
-db	'G', 0x00
-db	'R', 0x00
-db	' ', 0x00
-db	'2', 0x00
-db	'2', 0x00
-db	'1', 0x00
-db	'0', 0x00
+db	'X', 0x00			; bString
+db	'F', 0x00
+db	'D', 0x00
+db	'e', 0x00
+db	'v', 0x00
+db	'i', 0x00
+db	'c', 0x00
+db	'e', 0x00
 db	' ', 0x00
 db	'P', 0x00
 db	'I', 0x00
@@ -163,22 +162,9 @@ db	'1', 0x00
 db	'8', 0x00
 db	'F', 0x00
 db	'2', 0x00
-db	'4', 0x00
 db	'5', 0x00
 db	'5', 0x00
-db	' ', 0x00
-db	'U', 0x00
-db	'S', 0x00
-db	'B', 0x00
-db	' ', 0x00
-db	'K', 0x00
-db	'e', 0x00
-db	'y', 0x00
-db	'b', 0x00
-db	'o', 0x00
-db	'a', 0x00
-db	'r', 0x00
-db	'd', 0x00
+db	'0', 0x00
 Descriptor_end
 
 InitUSB
@@ -216,92 +202,98 @@ ServiceUSB
 			bcf		UCON, SUSPND, ACCESS
 			break
 		caseset	UIR, STALLIF, ACCESS
-			bcf			UIR, STALLIF, ACCESS
+			bcf		UIR, STALLIF, ACCESS
 			break
 		caseset	UIR, URSTIF, ACCESS
-			bsf		PORTA, 1, ACCESS
-			banksel		USB_curr_config
-			clrf		USB_curr_config, BANKED
-			bcf		UIR, TRNIF, ACCESS	; clear TRNIF four times to clear out the USTAT FIFO
-			bcf 		UIR, TRNIF, ACCESS
-			bcf		UIR, TRNIF, ACCESS
-			bcf		UIR, TRNIF, ACCESS
-			clrf		UEP0, ACCESS		; clear all EP control registers to disable all endpoints
-			clrf		UEP1, ACCESS
-			clrf		UEP2, ACCESS
-			clrf		UEP3, ACCESS
-			clrf		UEP4, ACCESS
-			clrf		UEP5, ACCESS
-			clrf		UEP6, ACCESS
-			clrf		UEP7, ACCESS
-			clrf		UEP8, ACCESS
-			clrf		UEP9, ACCESS
-			clrf		UEP10, ACCESS
-			clrf		UEP11, ACCESS
-			clrf		UEP12, ACCESS
-			clrf		UEP13, ACCESS
-			clrf		UEP14, ACCESS
-			clrf		UEP15, ACCESS
-			banksel		BD0OBC
-			movlw		0x08
-			movwf		BD0OBC, BANKED
-			movlw		low USB_Buffer			; EP0 OUT gets a buffer...
-			movwf		BD0OAL, BANKED
-			movlw		high USB_Buffer
-			movwf		BD0OAH, BANKED			; ...set up its address
-			movlw		0x88					; set UOWN bit (USB can write)
-			movwf		BD0OST, BANKED
-			movlw		low (USB_Buffer+0x08)	; EP0 IN gets a buffer...
-			movwf		BD0IAL, BANKED
-			movlw		high (USB_Buffer+0x08)
-			movwf		BD0IAH, BANKED			; ...set up its address
-			movlw		0x08					; clear UOWN bit (MCU can write)
-			movwf		BD0IST, BANKED
-			clrf		UADDR, ACCESS			; set USB Address to 0
- 			clrf		UIR, ACCESS				; clear all the USB interrupt flags
-			movlw		ENDPT_CONTROL
-			movwf		UEP0, ACCESS			; EP0 is a control pipe and requires an ACK
- 			movlw		0xFF					; enable all error interrupts
- 			movwf		UEIE, ACCESS
-			banksel		USB_USWSTAT
-			movlw		DEFAULT_STATE
-			movwf		USB_USWSTAT, BANKED
-			movlw		0x01
-			movwf		USB_device_status, BANKED	; self powered, remote wakeup disabled
-			bsf		PORTA, 2, ACCESS
+			call resetUSB
 			break
 		caseset	UIR, TRNIF, ACCESS
-			bsf		PORTA, 3, ACCESS
-			movlw		0x04
-			movwf		FSR0H, ACCESS
-			movf		USTAT, W, ACCESS
-			andlw		0x7C					; mask out bits 0, 1, and 7 of USTAT
-			movwf		FSR0L, ACCESS
-			banksel		USB_buffer_desc
-			movf		POSTINC0, W
-			movwf		USB_buffer_desc, BANKED
-			movf		POSTINC0, W
-			movwf		USB_buffer_desc+1, BANKED
-			movf		POSTINC0, W
-			movwf		USB_buffer_desc+2, BANKED
-			movf		POSTINC0, W
-			movwf		USB_buffer_desc+3, BANKED
-			movf		USTAT, W, ACCESS
-			movwf		USB_USTAT, BANKED		; save the USB status register
-			bcf			UIR, TRNIF, ACCESS		; clear TRNIF interrupt flag
-			movf		USB_buffer_desc, W, BANKED
-			andlw		0x3C					; extract PID bits
-			select
-				case TOKEN_SETUP
-					call		ProcessSetupToken
-					break
-				case TOKEN_IN
-					call		ProcessInToken
-					break
-				case TOKEN_OUT
-					call		ProcessOutToken
-					break
-			ends
+			; a USB transaction is complete
+			call processUSBTransaction
+			break
+	ends
+	return
+
+resetUSB
+	banksel		USB_curr_config
+	clrf		USB_curr_config, BANKED
+	bcf		UIR, TRNIF, ACCESS	; clear TRNIF four times to clear out the USTAT FIFO
+	bcf 		UIR, TRNIF, ACCESS
+	bcf		UIR, TRNIF, ACCESS
+	bcf		UIR, TRNIF, ACCESS
+	clrf		UEP0, ACCESS		; clear all EP control registers to disable all endpoints
+	clrf		UEP1, ACCESS
+	clrf		UEP2, ACCESS
+	clrf		UEP3, ACCESS
+	clrf		UEP4, ACCESS
+	clrf		UEP5, ACCESS
+	clrf		UEP6, ACCESS
+	clrf		UEP7, ACCESS
+	clrf		UEP8, ACCESS
+	clrf		UEP9, ACCESS
+	clrf		UEP10, ACCESS
+	clrf		UEP11, ACCESS
+	clrf		UEP12, ACCESS
+	clrf		UEP13, ACCESS
+	clrf		UEP14, ACCESS
+	clrf		UEP15, ACCESS
+	banksel		BD0OBC
+	movlw		0x08
+	movwf		BD0OBC, BANKED
+	movlw		low USB_Buffer			; EP0 OUT gets a buffer...
+	movwf		BD0OAL, BANKED
+	movlw		high USB_Buffer
+	movwf		BD0OAH, BANKED			; ...set up its address
+	movlw		0x88					; set UOWN bit (USB can write)
+	movwf		BD0OST, BANKED
+	movlw		low (USB_Buffer+0x08)	; EP0 IN gets a buffer...
+	movwf		BD0IAL, BANKED
+	movlw		high (USB_Buffer+0x08)
+	movwf		BD0IAH, BANKED			; ...set up its address
+	movlw		0x08					; clear UOWN bit (MCU can write)
+	movwf		BD0IST, BANKED
+	clrf		UADDR, ACCESS			; set USB Address to 0
+	clrf		UIR, ACCESS				; clear all the USB interrupt flags
+	movlw		ENDPT_CONTROL
+	movwf		UEP0, ACCESS			; EP0 is a control pipe and requires an ACK
+	movlw		0xFF					; enable all error interrupts
+	movwf		UEIE, ACCESS
+	banksel		USB_USWSTAT
+	movlw		DEFAULT_STATE
+	movwf		USB_USWSTAT, BANKED
+	movlw		0x01
+	movwf		USB_device_status, BANKED	; self powered, remote wakeup disabled
+	return
+
+processUSBTransaction
+	movlw		0x04
+	movwf		FSR0H, ACCESS
+	movf		USTAT, W, ACCESS
+	andlw		0x7C				; mask out bits 0, 1, and 7 of USTAT
+	movwf		FSR0L, ACCESS
+	banksel		USB_buffer_desc
+	movf		POSTINC0, W
+	movwf		USB_buffer_desc, BANKED
+	movf		POSTINC0, W
+	movwf		USB_buffer_desc+1, BANKED
+	movf		POSTINC0, W
+	movwf		USB_buffer_desc+2, BANKED
+	movf		POSTINC0, W
+	movwf		USB_buffer_desc+3, BANKED
+	movf		USTAT, W, ACCESS
+	movwf		USB_USTAT, BANKED		; save the USB status register
+	bcf		UIR, TRNIF, ACCESS		; clear TRNIF interrupt flag
+	movf		USB_buffer_desc, W, BANKED
+	andlw		0x3C				; extract PID bits
+	select
+		case TOKEN_SETUP
+			call	ProcessSetupToken
+			break
+		case TOKEN_IN
+			call	ProcessInToken
+			break
+		case TOKEN_OUT
+			call	ProcessOutToken
 			break
 	ends
 	return
@@ -1054,8 +1046,6 @@ WaitConfiguredUSB
 
 notYetConfitured
 	call	ServiceUSB		; service USB requests...
-	banksel	PORTA
-	btg	PORTA, 1, ACCESS
 	banksel	USB_USWSTAT
 	movf	USB_USWSTAT,W,BANKED
 	sublw	CONFIG_STATE
