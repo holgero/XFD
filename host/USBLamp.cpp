@@ -1,22 +1,3 @@
-/*
- * Copyright (C) 2010-2011 Daniel Kaefer and other contributors see
- * <https://github.com/daniel-git/usblamp/contributors/> for more details
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- *
- */
-
 #include "USBLamp.hpp"
 
 USBLamp::USBLamp() {
@@ -38,22 +19,14 @@ void USBLamp::open() {
         struct usb_device *dev;
 
         for (dev = bus->devices; dev; dev = dev->next) {
-            //printf("%04X:%04X\n", dev->descriptor.idVendor, dev->descriptor.idProduct);
-
-            if (ID_VENDOR == dev->descriptor.idVendor && ID_PRODUCT == dev->descriptor.idProduct) {
+            if (   ID_VENDOR  == dev->descriptor.idVendor
+                && ID_PRODUCT == dev->descriptor.idProduct) {
                 device = dev;
-                //usb_set_debug(254);
                 handler = usb_open(device);
-                int result;
-                //CALL(usb_reset(handler))
-                //CALL(usb_detach_kernel_driver_np(handler, 0))
                 usb_detach_kernel_driver_np(handler, 0);
-                //CALL(usb_set_configuration(handler, 1))
-                CALL(usb_claim_interface(handler, 0))
-                //CALL(usb_claim_interface(handler, 1))
+                usb_claim_interface(handler, 0);
                 return;
             }
-
         }
     }
 
@@ -67,59 +40,36 @@ void USBLamp::send(char *bytes, int size) {
     int index = 0x00;
     int timeout = 100;
 
-    int result;
-    CALL(usb_control_msg(handler, requesttype, request, value, index, bytes, size, timeout))
+    int result = usb_control_msg(handler, requesttype, request, value,
+                    index, bytes, size, timeout);
     if (size != result) {
-        printf("Error: color???\n");
+        printf("Error: leds???\n");
     }
 }
 
 void USBLamp::init() {
 }
 
-Color USBLamp::getColor() {
-	return color;
-}
-
-void USBLamp::setColor(Color newColor) {
-	color = newColor;
-
-    if(DEBUG) {
-        printf("Set color %d,%d,%d\n",color.red, color.green, color.blue);
-    }
-    char data[] = {color.red, color.green, color.blue, 0x00, 0x00, 0x00, 0x00, 0x05};
-
+void USBLamp::setLED(LED newLED) {
+    char data[] = {newLED.red ? 0x02 : 0x00,
+		   newLED.yellow ? 0x02 : 0x00,
+		   newLED.green ? 0x02 : 0x00,
+		   0x00, 0x00, 0x00, 0x00, 0x00};
     send(data, 8);
 }
 
 void USBLamp::switchOff() {
-    setColor(Color(0,0,0));
+    setLED(LED());
 }
 
 bool USBLamp::isConnected() {
     return handler != NULL;
 }
 
-void USBLamp::fading(unsigned int delay, Color newColor) {
-	// Do fading
-	for (int j=0; j<color.maxval; ++j) {
-		usleep(delay*1000/color.maxval+1);
-		Color c;
-		c.red = color.red + (newColor.red-color.red)*j/color.maxval;
-		c.green = color.green + (newColor.green-color.green)*j/color.maxval;
-		c.blue = color.blue + (newColor.blue-color.blue)*j/color.maxval;
-		setColor(c);
-	}
-}
-
-
 void USBLamp::close() {
-    int result;
-    //CALL(usb_reset(handler)) // off
-    CALL(usb_release_interface(handler, 0))
-    CALL(usb_close(handler))
+    usb_release_interface(handler, 0);
+    usb_close(handler);
 }
 
 USBLamp::~USBLamp() {
 }
-
