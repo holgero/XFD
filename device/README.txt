@@ -43,5 +43,4 @@ Verwende jeweils Bit 0 um die entsprechende LED zu schalten.
 Nehme PID 0xFF0C (/)
 
 TODO:
-* keyboard schnickschnack ausbauen
 * auf self powered umstellen/2. Konfiguration erstellen

@@ -13,12 +13,10 @@
 ; exported subroutines
 	global	InitUSB
 	global	ServiceUSB
-	global	SendKeyBuffer
 	global	WaitConfiguredUSB
 
 ;**************************************************************
 ; exported variables
-	global	Key_buffer
 	global	LED_states
 
 ;**************************************************************
@@ -40,7 +38,6 @@ USB_packet_length	RES	1
 USB_USTAT		RES	1
 USB_USWSTAT		RES	1
 LED_states		RES	3
-Key_buffer		RES	8
 
 ;**************************************************************
 ; code section
@@ -69,8 +66,8 @@ db	0x00, 0xA0			; iConfiguration (none), bmAttributes
 db	0x32, 0x09			; bMaxPower (100 mA), interface1: blength
 db	INTERFACE, 0x00			; INTERFACE, 0x00
 db	0x00, 0x01			; bAlternateSetting, bNumEndpoints (excluding EP0)
-db	0x03, 0x01			; bInterfaceClass (HID code), bInterfaceSubClass (Boot subclass)
-db	0x01, 0x00			; bInterfaceProtocol (Keyboard protocol), iInterface (none)
+db	0x03, 0x00		; bInterfaceClass (HID code), bInterfaceSubClass (no subclass)
+db	0x00, 0x00		; bInterfaceProtocol (none), iInterface (none)
 HID1
 db	0x09, HID			; bLength, bDescriptorType
 db	0x00, 0x01			; bcdHID (low byte), bcdHID (high byte)
@@ -798,28 +795,20 @@ ClassRequests
 	movf		USB_buffer_data+bRequest, W, BANKED
 	select
 		case GET_REPORT
+			; we have nothing to say
 			banksel		BD0IAH
 			movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
 			movwf		FSR0H, ACCESS
 			movf		BD0IAL, W, BANKED
 			movwf		FSR0L, ACCESS		; ...into FSR0
-			banksel		Key_buffer
-			movf		Key_buffer, W, BANKED	; copy modifier byte...
-			movwf		POSTINC0		; ...to EP0 IN buffer
-			movf		Key_buffer+1, W, BANKED	; copy reserved byte...
-			movwf		POSTINC0		; ...to EP0 IN buffer
-			movf		Key_buffer+2, W, BANKED	; copy keycode 1...
-			movwf		POSTINC0		; ...to EP0 IN buffer
-			movf		Key_buffer+3, W, BANKED	; copy keycode 2...
-			movwf		POSTINC0		; ...to EP0 IN buffer
-			movf		Key_buffer+4, W, BANKED	; copy keycode 3...
-			movwf		POSTINC0		; ...to EP0 IN buffer
-			movf		Key_buffer+5, W, BANKED	; copy keycode 4...
-			movwf		POSTINC0		; ...to EP0 IN buffer
-			movf		Key_buffer+6, W, BANKED	; copy keycode 5...
-			movwf		POSTINC0		; ...to EP0 IN buffer
-			movf		Key_buffer+7, W, BANKED	; copy keycode 6...
-			movwf		INDF0			; ...to EP0 IN buffer
+			clrf		POSTINC0		; and set to all zeroes
+			clrf		POSTINC0
+			clrf		POSTINC0
+			clrf		POSTINC0
+			clrf		POSTINC0
+			clrf		POSTINC0
+			clrf		POSTINC0
+			clrf		INDF0			; ...to EP0 IN buffer
 			banksel		BD0IBC
 			movlw		0x08
 			movwf		BD0IBC, BANKED		; set EP0 IN buffer byte count to 8
@@ -1014,59 +1003,16 @@ descriptorSent
 	movwf		BD0IST, BANKED
 	return
 
-SendKeyBuffer
-	banksel		BD1IAH
-	movf		BD1IAH, W, BANKED	; put EP1 IN buffer pointer...
-	movwf		FSR0H, ACCESS
-	movf		BD1IAL, W, BANKED
-	movwf		FSR0L, ACCESS		; ...into FSR0
-	banksel		Key_buffer
-	movf		Key_buffer, W, BANKED	; copy modifier byte...
-	movwf		POSTINC0		; ...to EP1 IN buffer
-	movf		Key_buffer+1, W, BANKED	; copy reserved byte...
-	movwf		POSTINC0		; ...to EP1 IN buffer
-	movf		Key_buffer+2, W, BANKED	; copy keycode 1...
-	movwf		POSTINC0		; ...to EP1 IN buffer
-	movf		Key_buffer+3, W, BANKED	; copy keycode 2...
-	movwf		POSTINC0		; ...to EP1 IN buffer
-	movf		Key_buffer+4, W, BANKED	; copy keycode 3...
-	movwf		POSTINC0		; ...to EP1 IN buffer
-	movf		Key_buffer+5, W, BANKED	; copy keycode 4...
-	movwf		POSTINC0		; ...to EP1 IN buffer
-	movf		Key_buffer+6, W, BANKED	; copy keycode 5...
-	movwf		POSTINC0		; ...to EP1 IN buffer
-	movf		Key_buffer+7, W, BANKED	; copy keycode 6...
-	movwf		INDF0			; ...to EP1 IN buffer
-	banksel		BD1IBC
-	movlw		0x08
-	movwf		BD1IBC, BANKED		; set EP1 IN buffer byte count to 8
-	movf		BD1IST, W, BANKED	; get EP1 IN status register
-	andlw		0x40			; extract the DATA01 bit
-	xorlw		0x40			; toggle the DATA01 bit
-	iorlw		0x88			; set UOWN and DTS bits
-	movwf		BD1IST, BANKED		; send packet
-	return
-
 WaitConfiguredUSB
-
-notYetConfitured
 	call	ServiceUSB		; service USB requests...
 	banksel	USB_USWSTAT
 	movf	USB_USWSTAT,W,BANKED
 	sublw	CONFIG_STATE
 	btfss	STATUS,Z,ACCESS
-	goto	notYetConfitured	; ...until the host configures the peripheral
+	goto	WaitConfiguredUSB	; ...until the host configures the peripheral
 
 	banksel		LED_states
 	clrf		LED_states, BANKED
-	clrf		Key_buffer, BANKED
-	clrf		Key_buffer+1, BANKED
-	clrf		Key_buffer+2, BANKED
-	clrf		Key_buffer+3, BANKED
-	clrf		Key_buffer+4, BANKED
-	clrf		Key_buffer+5, BANKED
-	clrf		Key_buffer+6, BANKED
-	clrf		Key_buffer+7, BANKED
 	return
 
 			END

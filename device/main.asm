@@ -50,14 +50,12 @@
 	extern	InitUSB
 	extern	WaitConfiguredUSB
 	extern	ServiceUSB
-	extern	SendKeyBuffer
 ; wait.asm
 	extern	waitMilliSeconds
 
 ;**************************************************************
 ; imported variables
 ; usb.asm
-	extern	Key_buffer
 	extern	LED_states
 
 ;**************************************************************
@@ -134,35 +132,6 @@ mainLoop
 	btfss		LED_states+2, 0, BANKED
 	bcf		PORTB, 2, ACCESS
 
-	; check to see if the PIC owns the EP1 IN buffer
-	banksel		BD1IST
-	btfsc		BD1IST, UOWN, BANKED	
-	goto		mainLoop
-
-	; set FSR0 to point to start of keycodes in Key_buffer
-	movlw		high (Key_buffer+2)
-	movwf		FSR0H, ACCESS
-	movlw		low (Key_buffer+2)
-	movwf		FSR0L, ACCESS
-
-	btfss		PORTB, 4, ACCESS	; keys requested?
-	goto		sendNothing
-
-	tableread	KeycodeTable, COUNTER	; get the next keycode and...
-	movwf		POSTINC0		; ...put it into Key_buffer
-sendNothing
-	clrf		INDF0
-	incf		COUNTER, F, BANKED	; increment COUNTER...
-	movlw		0x07
-	andwf		COUNTER, F, BANKED	; ...modulo 8
-	call		SendKeyBuffer
-
 	goto mainLoop
-
-KeycodeTable
-db	0x09, 0x12	; USB keycode for 'f', USB keycode for 'o'
-db	0x00, 0x12	; USB keycode for indicating no event, USB keycode for 'o'
-db	0x05, 0x04	; USB keycode for 'b', USB keycode for 'a'
-db	0x15, 0x2C	; USB keycode for 'r', USB keycode for ' '
 
 			END
