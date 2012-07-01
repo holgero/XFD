@@ -89,10 +89,7 @@ Main
 	movlw	0x0F
 	movwf	ADCON1, ACCESS		; set up PORTA to be digital I/Os
 
-	movlw	b'11110000'		; PORTA 4 lsbs go to LEDs 1 - 4
-	movwf	TRISA, ACCESS
-	movf	TRISB, W, ACCESS
-	iorlw	b'00010000'		; make RB4 an input (SW2)
+	movlw	b'11111000'		; LEDs on 3 LSBs of Port B
 	movwf	TRISB, ACCESS
 
         movlw		TIMER0H_VAL
@@ -122,11 +119,20 @@ mainLoop
 	movlw		TIMER0L_VAL
 	movwf		TMR0L, ACCESS
 
-	; set RA1 to reflect the new state of the CAPS LOCK LED
-	bsf		PORTA, 1, ACCESS
+	; set LEDs
 	banksel		LED_states
-	btfss		LED_states, 1, BANKED
-	bcf		PORTA, 1, ACCESS
+	; red LED on RB0
+	bsf		PORTB, 0, ACCESS
+	btfss		LED_states, 0, BANKED
+	bcf		PORTB, 0, ACCESS
+	; yellow LED on RB1
+	bsf		PORTB, 1, ACCESS
+	btfss		LED_states+1, 0, BANKED
+	bcf		PORTB, 1, ACCESS
+	; green LED on RB2
+	bsf		PORTB, 2, ACCESS
+	btfss		LED_states+2, 0, BANKED
+	bcf		PORTB, 2, ACCESS
 
 	; check to see if the PIC owns the EP1 IN buffer
 	banksel		BD1IST

@@ -39,7 +39,7 @@ USB_loop_index		RES	1
 USB_packet_length	RES	1
 USB_USTAT		RES	1
 USB_USWSTAT		RES	1
-LED_states		RES	1
+LED_states		RES	3
 Key_buffer		RES	8
 
 ;**************************************************************
@@ -937,9 +937,14 @@ ProcessOutToken
 					movwf		FSR0H, ACCESS
 					movf		BD0OAL, W, BANKED
 					movwf		FSR0L, ACCESS		; ...into FSR0
-					movf		INDF0, W		; get the first byte in the buffer and...
+				; get the first three bytes in the buffer and copy to LED_states
 					banksel		LED_states
-					movwf		LED_states, BANKED	; ...update the LED states with it
+					movf		POSTINC0, W	
+					movwf		LED_states, BANKED
+					movf		POSTINC0, W	
+					movwf		LED_states+1, BANKED
+					movf		INDF0, W	
+					movwf		LED_states+2, BANKED
 			ends
 			banksel		BD0OBC
 			movlw		0x08

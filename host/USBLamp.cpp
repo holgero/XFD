@@ -51,9 +51,9 @@ void USBLamp::init() {
 }
 
 void USBLamp::setLED(LED newLED) {
-    char data[] = {newLED.red ? 0x02 : 0x00,
-		   newLED.yellow ? 0x02 : 0x00,
-		   newLED.green ? 0x02 : 0x00,
+    char data[] = {newLED.red ? 0x01 : 0x00,
+		   newLED.yellow ? 0x01 : 0x00,
+		   newLED.green ? 0x01 : 0x00,
 		   0x00, 0x00, 0x00, 0x00, 0x00};
     send(data, 8);
 }
