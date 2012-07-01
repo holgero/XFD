@@ -72,44 +72,33 @@ HID1
 db	0x09, HID			; bLength, bDescriptorType
 db	0x00, 0x01			; bcdHID (low byte), bcdHID (high byte)
 db	0x00, 0x01			; bCountryCode (none), bNumDescriptors
-db	REPORT, 0x3F			; bDescriptorType, wDescriptorLength (low byte)
-db	0x00, 0x07			; wDescriptorLength (high byte), bLength (Endpoint1 descritor starts here)
+db	REPORT, String0 - Report1	; bDescriptorType, wDescriptorLength (low byte)
+db	0x00, 0x07			; wDescriptorLength (high byte), bLength (Endpoint1 descriptor starts here)
 db	ENDPOINT, 0x81			; bDescriptorType, bEndpointAddress (EP1 IN)
 db	0x03, 0x08			; bmAttributes (Interrupt), wMaxPacketSize (low byte)
 db	0x00, 0x0A			; wMaxPacketSize (high byte), bInterval (10 ms)
 Report1
-db	0x05, 0x01			; Usage Page (Generic Desktop),
-db	0x09, 0x06			; Usage (Keyboard),
-db	0xA1, 0x01			; Collection (Application),
-db	0x05, 0x07			;     Usage Page (Key Codes);
-db	0x19, 0xE0			;     Usage Minimum (224),
-db	0x29, 0xE7			;     Usage Maximum (231),
-db	0x15, 0x00			;     Logical Minimum (0),
-db	0x25, 0x01			;     Logical Maximum (1),
-db	0x75, 0x01			;     Report Size (1),
-db	0x95, 0x08			;     Report Count (8),
-db	0x81, 0x02			;     Input (Data, Variable, Absolute),   ; Modifier byte
-db	0x95, 0x01			;     Report Count (1),
-db	0x75, 0x08			;     Report Size (8),
-db	0x81, 0x01			;     Input (Constant),                   ; Reserved byte
-db	0x95, 0x05			;     Report Count (5),
-db	0x75, 0x01			;     Report Size (1),
-db	0x05, 0x08			;     Usage Page (Page# for LEDs),
-db	0x19, 0x01			;     Usage Minimum (1),
-db	0x29, 0x05			;     Usage Maxmimum (5),
-db	0x91, 0x02			;     Output (Data, Variable, Absolute),  ; LED report
-db	0x95, 0x01			;     Report Count (1),
-db	0x75, 0x03			;     Report Size (3),
-db	0x91, 0x01			;     Output (Constant),                  ; LED report padding
-db	0x95, 0x06			;     Report Count (6),
-db	0x75, 0x08			;     Report Size (8),
-db	0x15, 0x00			;     Logical Minimum (0),
-db	0x25, 0x65			;     Logical Maximum (101),
-db	0x05, 0x07			;     Usage Page (Key Codes),
-db	0x19, 0x00			;     Usage Minimum (0),
-db	0x29, 0x65			;     Usage Maximum (101),
-db	0x81, 0x00			;     Input (Data, Array),                ; Key arrays (6 bytes)
-db	0xC0				; End Collection
+db	0x05, 0x08			; Usage Page (LEDs),
+db	0x09, 0x48			; Usage (Indicator Red),
+db	0x91, 0x02			; Output (Data, Variable, Absolute),  ; LED report
+db	0x95, 0x01			; Report Count (1),
+db	0x75, 0x08			; Report Size (8),
+db	0x15, 0x00			; Logical Minimum (0),
+db	0x25, 0x01			; Logical Maximum (1),
+db	0x05, 0x08			; Usage Page (LEDs),
+db	0x09, 0x4a			; Usage (Indicator Amber (in fact it is yellow)),
+db	0x91, 0x02			; Output (Data, Variable, Absolute),  ; LED report
+db	0x95, 0x01			; Report Count (1),
+db	0x75, 0x08			; Report Size (8),
+db	0x15, 0x00			; Logical Minimum (0),
+db	0x25, 0x01			; Logical Maximum (1),
+db	0x05, 0x08			; Usage Page (LEDs),
+db	0x09, 0x49			; Usage (Indicator Green),
+db	0x91, 0x02			; Output (Data, Variable, Absolute),  ; LED report
+db	0x95, 0x01			; Report Count (1),
+db	0x75, 0x08			; Report Size (8),
+db	0x15, 0x00			; Logical Minimum (0),
+db	0x25, 0x01			; Logical Maximum (1),
 String0
 db	String1-String0, STRING		; bLength, bDescriptorType
 db	0x09, 0x04			; wLANGID[0] (low byte), wLANGID[0] (high byte)
