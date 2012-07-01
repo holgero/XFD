@@ -36,12 +36,14 @@ int main(int argc, char** argv) {
 	leds.open();
 	if (leds.isConnected()) {
 		leds.init();
-		leds.setLED(LED());
 		if (argc == 2) {
 			LED led = getLED(argv[1]);
 			std::cout << ( led.red ? "red" : "" ) << ( led.yellow ? "yellow" : "" )<< ( led.green ? "green" : "" ) << std::endl;
 			leds.setLED(led);
 			leds.close();
+		} else {
+			LED led = leds.getLED();
+			std::cout << ( led.red ? "red" : "" ) << ( led.yellow ? "yellow" : "" )<< ( led.green ? "green" : "" ) << std::endl;
 		}
 	} else {
 		std::cout << "no leds found" << std::endl;

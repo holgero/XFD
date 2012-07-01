@@ -784,23 +784,22 @@ ClassRequests
 	movf		USB_buffer_data+bRequest, W, BANKED
 	select
 		case GET_REPORT
-			; we have nothing to say
+			; report current LED_state
 			banksel		BD0IAH
 			movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
 			movwf		FSR0H, ACCESS
 			movf		BD0IAL, W, BANKED
 			movwf		FSR0L, ACCESS		; ...into FSR0
-			clrf		POSTINC0		; and set to all zeroes
-			clrf		POSTINC0
-			clrf		POSTINC0
-			clrf		POSTINC0
-			clrf		POSTINC0
-			clrf		POSTINC0
-			clrf		POSTINC0
-			clrf		INDF0			; ...to EP0 IN buffer
+			banksel 	LED_states
+			movf		LED_states, W, BANKED	; red led
+			movwf		POSTINC0
+			movf		LED_states+1, W, BANKED	; yellow led
+			movwf		POSTINC0
+			movf		LED_states+2, W, BANKED	; green led
+			movwf		INDF0			; ...to EP0 IN buffer
 			banksel		BD0IBC
-			movlw		0x08
-			movwf		BD0IBC, BANKED		; set EP0 IN buffer byte count to 8
+			movlw		0x03
+			movwf		BD0IBC, BANKED		; set EP0 IN buffer byte count to 3
 			movlw		0xC8
 			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
 			break

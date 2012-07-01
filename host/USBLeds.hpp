@@ -19,12 +19,14 @@ public:
     void init();
     void switchOff();
     void setLED(LED newLED);
+    LED getLED();
     void close();
     virtual ~USBLeds();
 private:
     void send(char *data, int size);
+    void receive(char *data, int size);
     struct usb_device *device;
-    struct usb_dev_handle *handler;
+    struct usb_dev_handle *handle;
 };
 
 #endif	/* USBLEDS_H */
