@@ -10,43 +10,41 @@
 #include <string>
 #include <unistd.h>
 
-#include "USBLamp.hpp"
+#include "USBLeds.hpp"
 #include "LED.hpp"
 
 LED getLED(char* led) {
-	if(strcmp(led, "red") == 0) {
-		return LED(true, false, false);
-	} else if(strcmp(led, "green") == 0) {
-		return LED(false, false, true);
-	} else if(strcmp(led, "yellow") == 0) {
-		return LED(false, true, false);
-	} else {
-		return LED();
-	}
+	bool red = (index(led, 'r') != NULL);
+	bool yellow = (index(led, 'y') != NULL);
+	bool green = (index(led, 'g') != NULL);
+	return LED(red, yellow, green);
 }
 
 void print_help() {
-	std::cout << "Usage: usbleds color" << std::endl;
-	std::cout << "   valid colors: [red yellow green off]" << std::endl;
+	std::cout << "Usage: usbleds [r][y][g]" << std::endl;
 }
 
 int main(int argc, char** argv) {
-	if(argc != 2 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
-        print_help();
-        return 0;
+    if (argc > 1) {
+        if (argc > 2 || !strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")) {
+            print_help();
+            return 0;
+	}
     }
 
-	USBLamp lamp = USBLamp();
-	lamp.open();
-	if (lamp.isConnected()) {
-		lamp.init();
-		lamp.setLED(LED());
-		LED led = getLED(argv[1]);
-		std::cout << ( led.red ? "red" : "" ) << ( led.yellow ? "yellow" : "" )<< ( led.green ? "green" : "" ) << std::endl;
-		lamp.setLED(led);
-		lamp.close();
+	USBLeds leds = USBLeds();
+	leds.open();
+	if (leds.isConnected()) {
+		leds.init();
+		leds.setLED(LED());
+		if (argc == 2) {
+			LED led = getLED(argv[1]);
+			std::cout << ( led.red ? "red" : "" ) << ( led.yellow ? "yellow" : "" )<< ( led.green ? "green" : "" ) << std::endl;
+			leds.setLED(led);
+			leds.close();
+		}
 	} else {
-		std::cout << "no lamp found" << std::endl;
+		std::cout << "no leds found" << std::endl;
 	}
 
 	return 0;

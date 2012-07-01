@@ -4,4 +4,4 @@
 *.map
 *.o
 *~
-host/usblamp
+host/usbleds

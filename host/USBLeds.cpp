@@ -1,10 +1,10 @@
-#include "USBLamp.hpp"
+#include "USBLeds.hpp"
 
-USBLamp::USBLamp() {
+USBLeds::USBLeds() {
     handler = NULL;
 }
 
-void USBLamp::open() {
+void USBLeds::open() {
     struct usb_bus *busses;
 
     usb_init();
@@ -33,7 +33,7 @@ void USBLamp::open() {
     return;
 }
 
-void USBLamp::send(char *bytes, int size) {
+void USBLeds::send(char *bytes, int size) {
     int requesttype = USB_TYPE_CLASS | USB_RECIP_INTERFACE;
     int request = 0x09;
     int value = 0x200;
@@ -47,10 +47,10 @@ void USBLamp::send(char *bytes, int size) {
     }
 }
 
-void USBLamp::init() {
+void USBLeds::init() {
 }
 
-void USBLamp::setLED(LED newLED) {
+void USBLeds::setLED(LED newLED) {
     char data[] = {newLED.red ? 0x01 : 0x00,
 		   newLED.yellow ? 0x01 : 0x00,
 		   newLED.green ? 0x01 : 0x00,
@@ -58,18 +58,18 @@ void USBLamp::setLED(LED newLED) {
     send(data, 8);
 }
 
-void USBLamp::switchOff() {
+void USBLeds::switchOff() {
     setLED(LED());
 }
 
-bool USBLamp::isConnected() {
+bool USBLeds::isConnected() {
     return handler != NULL;
 }
 
-void USBLamp::close() {
+void USBLeds::close() {
     usb_release_interface(handler, 0);
     usb_close(handler);
 }
 
-USBLamp::~USBLamp() {
+USBLeds::~USBLeds() {
 }
