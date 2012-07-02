@@ -1,0 +1,26 @@
+#!/bin/bash
+
+usbleds r
+sleep 2
+usbleds ry
+sleep 1
+usbleds y
+sleep 2
+usbleds yg
+sleep 1
+usbleds g
+sleep 2
+usbleds gb
+sleep 1
+usbleds b
+sleep 2
+usbleds bw
+sleep 1
+usbleds w
+sleep 2
+usbleds wr
+sleep 1
+usbleds r
+sleep 2
+
+usbleds o
