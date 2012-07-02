@@ -87,6 +87,7 @@ Main
 	movlw	0x0F
 	movwf	ADCON1, ACCESS		; set up PORTA to be digital I/Os
 
+	clrf	PORTB, ACCESS
 	movlw	b'11100000'		; LEDs on 5 LSBs of Port B
 	movwf	TRISB, ACCESS
 

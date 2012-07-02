@@ -72,12 +72,16 @@ HID1
 db	0x09, HID			; bLength, bDescriptorType
 db	0x00, 0x01			; bcdHID (low byte), bcdHID (high byte)
 db	0x00, 0x01			; bCountryCode (none), bNumDescriptors
-db	REPORT, String0 - Report1	; bDescriptorType, wDescriptorLength (low byte)
+;db	REPORT, String0 - Report1	; bDescriptorType, wDescriptorLength (low byte)
+db	REPORT, 0x31			; hard coded length because of padding
 db	0x00, 0x07			; wDescriptorLength (high byte), bLength (Endpoint1 descriptor starts here)
 db	ENDPOINT, 0x81			; bDescriptorType, bEndpointAddress (EP1 IN)
 db	0x03, 0x08			; bmAttributes (Interrupt), wMaxPacketSize (low byte)
 db	0x00, 0x0A			; wMaxPacketSize (high byte), bInterval (10 ms)
 Report1
+db	0x05, 0x0C			; Usage Page (Consumer),
+db	0x09, 0x01			; Usage (Consumer specific),
+db	0xA1, 0x01			; Collection (Application),
 db	0x05, 0x08			; Usage Page (LEDs),
 db	0x09, 0x48			; Usage (Indicator Red),
 db	0x91, 0x02			; Output (Data, Variable, Absolute),  ; LED report
@@ -99,6 +103,7 @@ db	0x95, 0x01			; Report Count (1),
 db	0x75, 0x08			; Report Size (8),
 db	0x15, 0x00			; Logical Minimum (0),
 db	0x25, 0x01			; Logical Maximum (1),
+db	0xC0				; End Collection
 String0
 db	String1-String0, STRING		; bLength, bDescriptorType
 db	0x09, 0x04			; wLANGID[0] (low byte), wLANGID[0] (high byte)
