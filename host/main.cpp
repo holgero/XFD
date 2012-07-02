@@ -17,11 +17,22 @@ LED getLED(char* led) {
 	bool red = (index(led, 'r') != NULL);
 	bool yellow = (index(led, 'y') != NULL);
 	bool green = (index(led, 'g') != NULL);
-	return LED(red, yellow, green);
+	bool blue = (index(led, 'b') != NULL);
+	bool white = (index(led, 'w') != NULL);
+	return LED(red, yellow, green, blue, white);
 }
 
 void print_help() {
 	std::cout << "Usage: usbleds [r][y][g]" << std::endl;
+}
+
+void dump(LED led) {
+    std::cout << ( led.red ? "red " : "" )
+	<< ( led.yellow ? "yellow " : "" )
+	<< ( led.green ? "green " : "" )
+	<< ( led.blue ? "blue " : "" )
+	<< ( led.white ? "white " : "" )
+	<< std::endl;
 }
 
 int main(int argc, char** argv) {
@@ -38,12 +49,12 @@ int main(int argc, char** argv) {
 		leds.init();
 		if (argc == 2) {
 			LED led = getLED(argv[1]);
-			std::cout << ( led.red ? "red" : "" ) << ( led.yellow ? "yellow" : "" )<< ( led.green ? "green" : "" ) << std::endl;
+			dump(led);
 			leds.setLED(led);
 			leds.close();
 		} else {
 			LED led = leds.getLED();
-			std::cout << ( led.red ? "red" : "" ) << ( led.yellow ? "yellow" : "" )<< ( led.green ? "green" : "" ) << std::endl;
+			dump(led);
 		}
 	} else {
 		std::cout << "no leds found" << std::endl;

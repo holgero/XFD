@@ -37,7 +37,7 @@ USB_loop_index		RES	1
 USB_packet_length	RES	1
 USB_USTAT		RES	1
 USB_USWSTAT		RES	1
-LED_states		RES	3
+LED_states		RES	5
 
 ;**************************************************************
 ; code section
@@ -796,10 +796,14 @@ ClassRequests
 			movf		LED_states+1, W, BANKED	; yellow led
 			movwf		POSTINC0
 			movf		LED_states+2, W, BANKED	; green led
+			movwf		POSTINC0
+			movf		LED_states+3, W, BANKED	; blue led
+			movwf		POSTINC0
+			movf		LED_states+4, W, BANKED	; white led
 			movwf		INDF0			; ...to EP0 IN buffer
 			banksel		BD0IBC
-			movlw		0x03
-			movwf		BD0IBC, BANKED		; set EP0 IN buffer byte count to 3
+			movlw		0x05
+			movwf		BD0IBC, BANKED		; set EP0 IN buffer byte count
 			movlw		0xC8
 			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
 			break
@@ -914,14 +918,18 @@ ProcessOutToken
 					movwf		FSR0H, ACCESS
 					movf		BD0OAL, W, BANKED
 					movwf		FSR0L, ACCESS		; ...into FSR0
-				; get the first three bytes in the buffer and copy to LED_states
+				; get five bytes in the buffer and copy to LED_states
 					banksel		LED_states
 					movf		POSTINC0, W	
 					movwf		LED_states, BANKED
 					movf		POSTINC0, W	
 					movwf		LED_states+1, BANKED
-					movf		INDF0, W	
+					movf		POSTINC0, W	
 					movwf		LED_states+2, BANKED
+					movf		POSTINC0, W	
+					movwf		LED_states+3, BANKED
+					movf		INDF0, W	
+					movwf		LED_states+4, BANKED
 			ends
 			banksel		BD0OBC
 			movlw		0x08

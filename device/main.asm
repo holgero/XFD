@@ -87,7 +87,7 @@ Main
 	movlw	0x0F
 	movwf	ADCON1, ACCESS		; set up PORTA to be digital I/Os
 
-	movlw	b'11111000'		; LEDs on 3 LSBs of Port B
+	movlw	b'11100000'		; LEDs on 5 LSBs of Port B
 	movwf	TRISB, ACCESS
 
         movlw		TIMER0H_VAL
@@ -129,6 +129,8 @@ setled	macro	index
 	setled	0	; red
 	setled	1	; yellow
 	setled	2	; green
+	setled	3	; blue
+	setled	4	; white
 
 	goto mainLoop
 
