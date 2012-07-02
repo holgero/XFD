@@ -117,20 +117,18 @@ mainLoop
 	movlw		TIMER0L_VAL
 	movwf		TMR0L, ACCESS
 
-	; set LEDs
+	; set leds according to led state
+setled	macro	index
+	btfss		LED_states + index, 0, BANKED
+	bcf		PORTB, index, ACCESS		; bit 0 cleared, clear port bit
+	btfsc		LED_states + index, 0, BANKED
+	bsf		PORTB, index, ACCESS		; bit 0 set, set port bit
+	endm
+
 	banksel		LED_states
-	; red LED on RB0
-	bsf		PORTB, 0, ACCESS
-	btfss		LED_states, 0, BANKED
-	bcf		PORTB, 0, ACCESS
-	; yellow LED on RB1
-	bsf		PORTB, 1, ACCESS
-	btfss		LED_states+1, 0, BANKED
-	bcf		PORTB, 1, ACCESS
-	; green LED on RB2
-	bsf		PORTB, 2, ACCESS
-	btfss		LED_states+2, 0, BANKED
-	bcf		PORTB, 2, ACCESS
+	setled	0	; red
+	setled	1	; yellow
+	setled	2	; green
 
 	goto mainLoop
 
