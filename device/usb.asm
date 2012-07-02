@@ -75,7 +75,7 @@ db	0x00, 0x01			; bCountryCode (none), bNumDescriptors
 
 
 ;db	REPORT, String0 - Report1	; bDescriptorType, wDescriptorLength (low byte)
-#define REPORT_DESCRIPTOR_LENGTH	0x4d
+#define REPORT_DESCRIPTOR_LENGTH	0x53
 db	REPORT, REPORT_DESCRIPTOR_LENGTH; hard coded length because of padding
 db	0x00, 0x07			; wDescriptorLength (high byte), bLength (Endpoint1 descriptor starts here)
 db	ENDPOINT, 0x81			; bDescriptorType, bEndpointAddress (EP1 IN)
@@ -101,6 +101,9 @@ db	0xA1, 0x01			; Collection (Application),
 	oneLedUsage	0x49		; green LED
 	oneLedUsage	0x4b		; generic indicator (blue LED)
 	oneLedUsage	0x4b		; generic indicator (white LED)
+db	0x91, 0x01			; Output(Constant) padding
+db	0x95, 0x03			; Report Count (3) -> pad total report to 8 bytes
+db	0x75, 0x08			; Report Size (8)
 db	0xC0				; End Collection
 
 String0
