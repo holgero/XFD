@@ -258,6 +258,15 @@ resetUSB
 	movwf		USB_device_status, BANKED	; self powered, remote wakeup disabled
 	return
 
+	; dispatch request codes to specific labels
+dispatchRequest	macro	requestCode, requestLabel
+	xorlw	requestCode
+	btfsc	STATUS,Z,ACCESS
+	goto	requestLabel
+	xorlw	requestCode
+	endm
+	
+
 processUSBTransaction
 	movlw		0x04
 	movwf		FSR0H, ACCESS
@@ -278,20 +287,12 @@ processUSBTransaction
 	bcf		UIR, TRNIF, ACCESS		; clear TRNIF interrupt flag
 	movf		USB_buffer_desc, W, BANKED
 	andlw		0x3C				; extract PID bits
-	select
-		case TOKEN_SETUP
-			call	ProcessSetupToken
-			break
-		case TOKEN_IN
-			call	ProcessInToken
-			break
-		case TOKEN_OUT
-			call	ProcessOutToken
-			break
-	ends
+	dispatchRequest	TOKEN_SETUP, processSetupToken
+	dispatchRequest	TOKEN_IN, processInToken
+	dispatchRequest	TOKEN_OUT, processOutToken
 	return
 
-ProcessSetupToken
+processSetupToken
 	banksel		USB_buffer_data
 	movf		USB_buffer_desc+ADDRESSH, W, BANKED
 	movwf		FSR0H, ACCESS
@@ -349,14 +350,6 @@ ProcessSetupToken
 standardRequests
 	movf	USB_buffer_data+bRequest, W, BANKED
 
-	; dispatch request codes to specific labels
-dispatchRequest	macro	requestCode, requestLabel
-	xorlw	requestCode
-	btfsc	STATUS,Z,ACCESS
-	goto	requestLabel
-	xorlw	requestCode
-	endm
-	
 	dispatchRequest	GET_STATUS, getStatusRequest
 	dispatchRequest	CLEAR_FEATURE, setFeatureRequest
 	dispatchRequest	SET_FEATURE, setFeatureRequest
@@ -889,7 +882,7 @@ VendorRequests
 	ends
 	return
 
-ProcessInToken
+processInToken
 	banksel		USB_USTAT
 	movf		USB_USTAT, W, BANKED
 	andlw		0x18		; extract the EP bits
@@ -922,7 +915,7 @@ ProcessInToken
 	ends
 	return
 
-ProcessOutToken
+processOutToken
 	banksel		USB_USTAT
 	movf		USB_USTAT, W, BANKED
 	andlw		0x18		; extract the EP bits
