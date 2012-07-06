@@ -371,129 +371,7 @@ StandardRequests
 			endi
 			break
 		case GET_DESCRIPTOR
-			movwf		USB_dev_req, BANKED			; processing a GET_DESCRIPTOR request
-			movf		USB_buffer_data+(wValue+1), W, BANKED
-			select
-				case DEVICE
-					movlw		low (Device-Descriptor_begin)
-					movwf		USB_desc_ptr, BANKED
-					call		Descriptor		; get descriptor length
-					movwf		USB_bytes_left, BANKED
-					ifl USB_buffer_data+(wLength+1), 0
-					andiffLT USB_buffer_data+wLength, USB_bytes_left
-						movf		USB_buffer_data+wLength, W, BANKED
-						movwf		USB_bytes_left, BANKED
-					endi
-					call		SendDescriptorPacket
-					break
-				case CONFIGURATION
-					bcf		USB_error_flags, 0, BANKED
-					movf		USB_buffer_data+wValue, W, BANKED
-					select
-						case 0
-							movlw		low (Configuration1-Descriptor_begin)
-							break
-						default
-							bsf		USB_error_flags, 0, BANKED
-					ends
-					ifclr USB_error_flags, 0, BANKED
-						addlw		0x02		; add offset for wTotalLength
-						movwf		USB_desc_ptr, BANKED
-						call		Descriptor	; get total descriptor length
-						movwf		USB_bytes_left, BANKED
-						movlw		0x02
-						subwf		USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
-						ifl USB_buffer_data+(wLength+1), 0
-						andiffLT USB_buffer_data+wLength, USB_bytes_left
-							movf		USB_buffer_data+wLength, W, BANKED
-							movwf		USB_bytes_left, BANKED
-						endi
-						call		SendDescriptorPacket
-					otherwise
-						bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-					endi
-					break
-				case STRING
-					bcf		USB_error_flags, 0, BANKED
-					movf		USB_buffer_data+wValue, W, BANKED
-					select
-						case 0
-							movlw		low (String0-Descriptor_begin)
-							break
-						case 1
-							movlw		low (String1-Descriptor_begin)
-							break
-						case 2
-							movlw		low (String2-Descriptor_begin)
-							break
-						default
-							bsf		USB_error_flags, 0, BANKED
-					ends
-					ifclr USB_error_flags, 0, BANKED
-						movwf		USB_desc_ptr, BANKED
-						call		Descriptor	; get descriptor length
-						movwf		USB_bytes_left, BANKED
-						ifl USB_buffer_data+(wLength+1), 0
-						andiffLT USB_buffer_data+wLength, USB_bytes_left
-							movf		USB_buffer_data+wLength, W, BANKED
-							movwf		USB_bytes_left, BANKED
-						endi
-						call		SendDescriptorPacket
-					otherwise
-						bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-					endi
-					break
-				case HID
-					bcf		USB_error_flags, 0, BANKED
-					movf		USB_buffer_data+wValue, W, BANKED
-					select
-						case 0
-							movlw		low (HID1-Descriptor_begin)
-							break
-						default
-							bsf			USB_error_flags, 0, BANKED
-					ends
-					ifclr USB_error_flags, 0, BANKED
-						movwf		USB_desc_ptr, BANKED
-						call		Descriptor	; get descriptor length
-						movwf		USB_bytes_left, BANKED
-						ifl USB_buffer_data+(wLength+1), 0
-						andiffLT USB_buffer_data+wLength, USB_bytes_left
-							movf		USB_buffer_data+wLength, W, BANKED
-							movwf		USB_bytes_left, BANKED
-						endi
-						call		SendDescriptorPacket
-					otherwise
-						bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-					endi
-					break
-				case REPORT
-					bcf		USB_error_flags, 0, BANKED
-					movf		USB_buffer_data+wValue, W, BANKED
-					select
-						case 0
-							movlw		REPORT_DESCRIPTOR_LENGTH
-							movwf		USB_bytes_left, BANKED	; set descriptor length
-							movlw		low (Report1-Descriptor_begin)
-							break
-						default
-							bsf		USB_error_flags, 0, BANKED
-					ends
-					ifclr USB_error_flags, 0, BANKED
-						movwf		USB_desc_ptr, BANKED
-						ifl USB_buffer_data+(wLength+1), 0
-						andiffLT USB_buffer_data+wLength, USB_bytes_left
-							movf		USB_buffer_data+wLength, W, BANKED
-							movwf		USB_bytes_left, BANKED
-						endi
-						call		SendDescriptorPacket
-					otherwise
-						bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-					endi
-					break
-				default
-					bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-			ends
+			call	getDescriptorRequest
 			break
 		case GET_CONFIGURATION
 			banksel		BD0IAH
@@ -716,6 +594,7 @@ getStatusRequest
 	ends
 	return
 
+getDescriptorRequestError
 getStatusRequestError
 setFeatureRequestError
 	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
@@ -798,6 +677,131 @@ setFeatureRequest
 	ends
 	return
 
+getDescriptorRequest
+	movwf		USB_dev_req, BANKED			; processing a GET_DESCRIPTOR request
+	movf		USB_buffer_data+(wValue+1), W, BANKED
+	select
+		case DEVICE
+			movlw		low (Device-Descriptor_begin)
+			movwf		USB_desc_ptr, BANKED
+			call		Descriptor		; get descriptor length
+			movwf		USB_bytes_left, BANKED
+			ifl USB_buffer_data+(wLength+1), 0
+			andiffLT USB_buffer_data+wLength, USB_bytes_left
+				movf		USB_buffer_data+wLength, W, BANKED
+				movwf		USB_bytes_left, BANKED
+			endi
+			call		SendDescriptorPacket
+			break
+		case CONFIGURATION
+			bcf		USB_error_flags, 0, BANKED
+			movf		USB_buffer_data+wValue, W, BANKED
+			select
+				case 0
+					movlw		low (Configuration1-Descriptor_begin)
+					break
+				default
+					bsf		USB_error_flags, 0, BANKED
+			ends
+			ifclr USB_error_flags, 0, BANKED
+				addlw		0x02		; add offset for wTotalLength
+				movwf		USB_desc_ptr, BANKED
+				call		Descriptor	; get total descriptor length
+				movwf		USB_bytes_left, BANKED
+				movlw		0x02
+				subwf		USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
+				ifl USB_buffer_data+(wLength+1), 0
+				andiffLT USB_buffer_data+wLength, USB_bytes_left
+					movf		USB_buffer_data+wLength, W, BANKED
+					movwf		USB_bytes_left, BANKED
+				endi
+				call		SendDescriptorPacket
+			otherwise
+				goto		getDescriptorRequestError
+			endi
+			break
+		case STRING
+			bcf		USB_error_flags, 0, BANKED
+			movf		USB_buffer_data+wValue, W, BANKED
+			select
+				case 0
+					movlw		low (String0-Descriptor_begin)
+					break
+				case 1
+					movlw		low (String1-Descriptor_begin)
+					break
+				case 2
+					movlw		low (String2-Descriptor_begin)
+					break
+				default
+					bsf		USB_error_flags, 0, BANKED
+			ends
+			ifclr USB_error_flags, 0, BANKED
+				movwf		USB_desc_ptr, BANKED
+				call		Descriptor	; get descriptor length
+				movwf		USB_bytes_left, BANKED
+				ifl USB_buffer_data+(wLength+1), 0
+				andiffLT USB_buffer_data+wLength, USB_bytes_left
+					movf		USB_buffer_data+wLength, W, BANKED
+					movwf		USB_bytes_left, BANKED
+				endi
+				call		SendDescriptorPacket
+			otherwise
+				goto		getDescriptorRequestError
+			endi
+			break
+		case HID
+			bcf		USB_error_flags, 0, BANKED
+			movf		USB_buffer_data+wValue, W, BANKED
+			select
+				case 0
+					movlw		low (HID1-Descriptor_begin)
+					break
+				default
+					bsf			USB_error_flags, 0, BANKED
+			ends
+			ifclr USB_error_flags, 0, BANKED
+				movwf		USB_desc_ptr, BANKED
+				call		Descriptor	; get descriptor length
+				movwf		USB_bytes_left, BANKED
+			ifl USB_buffer_data+(wLength+1), 0
+				andiffLT USB_buffer_data+wLength, USB_bytes_left
+					movf		USB_buffer_data+wLength, W, BANKED
+					movwf		USB_bytes_left, BANKED
+				endi
+				call		SendDescriptorPacket
+			otherwise
+				goto		getDescriptorRequestError
+			endi
+			break
+		case REPORT
+			bcf		USB_error_flags, 0, BANKED
+			movf		USB_buffer_data+wValue, W, BANKED
+			select
+				case 0
+					movlw		REPORT_DESCRIPTOR_LENGTH
+					movwf		USB_bytes_left, BANKED	; set descriptor length
+					movlw		low (Report1-Descriptor_begin)
+					break
+				default
+					bsf		USB_error_flags, 0, BANKED
+			ends
+			ifclr USB_error_flags, 0, BANKED
+				movwf		USB_desc_ptr, BANKED
+				ifl USB_buffer_data+(wLength+1), 0
+				andiffLT USB_buffer_data+wLength, USB_bytes_left
+					movf		USB_buffer_data+wLength, W, BANKED
+					movwf		USB_bytes_left, BANKED
+				endi
+				call		SendDescriptorPacket
+			otherwise
+				goto		getDescriptorRequestError
+			endi
+			break
+		default
+			goto		getDescriptorRequestError
+	ends
+	return
 
 ClassRequests
 	movf		USB_buffer_data+bRequest, W, BANKED
