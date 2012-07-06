@@ -232,23 +232,23 @@ resetUSB
 	banksel		BD0OBC
 	movlw		0x08
 	movwf		BD0OBC, BANKED
-	movlw		low USB_Buffer			; EP0 OUT gets a buffer...
+	movlw		low USB_Buffer		; EP0 OUT gets a buffer...
 	movwf		BD0OAL, BANKED
 	movlw		high USB_Buffer
-	movwf		BD0OAH, BANKED			; ...set up its address
-	movlw		0x88					; set UOWN bit (USB can write)
+	movwf		BD0OAH, BANKED		; ...set up its address
+	movlw		0x88			; set UOWN bit (USB can write)
 	movwf		BD0OST, BANKED
 	movlw		low (USB_Buffer+0x08)	; EP0 IN gets a buffer...
 	movwf		BD0IAL, BANKED
 	movlw		high (USB_Buffer+0x08)
-	movwf		BD0IAH, BANKED			; ...set up its address
-	movlw		0x08					; clear UOWN bit (MCU can write)
+	movwf		BD0IAH, BANKED		; ...set up its address
+	movlw		0x08			; clear UOWN bit (MCU can write)
 	movwf		BD0IST, BANKED
-	clrf		UADDR, ACCESS			; set USB Address to 0
-	clrf		UIR, ACCESS				; clear all the USB interrupt flags
+	clrf		UADDR, ACCESS		; set USB Address to 0
+	clrf		UIR, ACCESS		; clear all the USB interrupt flags
 	movlw		ENDPT_CONTROL
-	movwf		UEP0, ACCESS			; EP0 is a control pipe and requires an ACK
-	movlw		0xFF					; enable all error interrupts
+	movwf		UEP0, ACCESS		; EP0 is a control pipe and requires an ACK
+	movlw		0xFF			; enable all error interrupts
 	movwf		UEIE, ACCESS
 	banksel		USB_USWSTAT
 	movlw		DEFAULT_STATE
@@ -356,6 +356,7 @@ standardRequestsError
 sendZeroByteAnswer
 	banksel		BD0IBC
 	clrf		BD0IBC, BANKED	; set byte count to 0
+sendAnswer
 	movlw		0xC8
 	movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
 	return
@@ -397,9 +398,7 @@ getInterfaceRequest
 			clrf	INDF0		; always send back 0 for bAlternateSetting
 			movlw	0x01
 			movwf	BD0IBC, BANKED	; set byte count to 1
-			movlw	0xC8
-			movwf	BD0IST, BANKED	; send packet as DATA1, set UOWN bit
-			break
+			goto	sendAnswer
 		default
 			goto	standardRequestsError
 	ends
@@ -446,9 +445,7 @@ getConfigurationRequest
 	banksel		BD0IBC
 	movlw		0x01
 	movwf		BD0IBC, BANKED		; set EP0 IN byte count to 1
-	movlw		0xC8
-	movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-	return
+	goto		sendAnswer
 
 setAddressRequest
 	ifset USB_buffer_data+wValue, 7, BANKED	; if new device address is illegal, send Request Error
@@ -479,9 +476,7 @@ getStatusRequest
 			banksel		BD0IBC
 			movlw		0x02
 			movwf		BD0IBC, BANKED		; set byte count to 2
-			movlw		0xC8
-			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-			break
+			goto		sendAnswer
 		case RECIPIENT_INTERFACE
 			movf		USB_USWSTAT, W, BANKED
 			select
@@ -502,9 +497,7 @@ getStatusRequest
 					clrf	INDF0
 					movlw	0x02
 					movwf	BD0IBC, BANKED		; set byte count to 2
-					movlw	0xC8
-					movwf	BD0IST, BANKED	; send packet as DATA1, set UOWN bit
-					break
+					goto	sendAnswer
 			ends
 			break
 		case RECIPIENT_ENDPOINT
@@ -527,9 +520,8 @@ getStatusRequest
 						movwf		POSTINC0
 						clrf		INDF0
 						movlw		0x02
-						movwf		BD0IBC, BANKED		; set byte count to 2
-						movlw		0xC8
-						movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
+						movwf		BD0IBC, BANKED	; set byte count to 2
+						goto	sendAnswer
 					otherwise
 						goto	standardRequestsError
 					endi
@@ -560,9 +552,8 @@ getStatusRequest
 						clrf		INDF0
 						banksel		BD0IBC
 						movlw		0x02
-						movwf		BD0IBC, BANKED		; set byte count to 2
-						movlw		0xC8
-						movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
+						movwf		BD0IBC, BANKED	; set byte count to 2
+						goto		sendAnswer
 					endi
 					break
 				default
@@ -792,9 +783,7 @@ classRequests
 			banksel		BD0IBC
 			movlw		0x05
 			movwf		BD0IBC, BANKED		; set EP0 IN buffer byte count
-			movlw		0xC8
-			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-			break
+			goto		sendAnswer
 		case SET_REPORT
 			movwf		USB_dev_req, BANKED	; processing a SET_REPORT request
 			break
@@ -810,9 +799,7 @@ classRequests
 			banksel		BD0IBC
 			movlw		0x01
 			movwf		BD0IBC, BANKED		; set byte count to 1
-			movlw		0xC8
-			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-			break
+			goto		sendAnswer
 		case SET_PROTOCOL
 			movf		USB_buffer_data+wValue, W, BANKED
 			movwf		USB_protocol, BANKED	; update the new protocol value
@@ -829,9 +816,7 @@ classRequests
 			banksel		BD0IBC
 			movlw		0x01
 			movwf		BD0IBC, BANKED		; set byte count to 1
-			movlw		0xC8
-			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-			break
+			goto		sendAnswer
 		case SET_IDLE
 			movf		USB_buffer_data+wValue, W, BANKED
 			movwf		USB_idle_rate, BANKED	; update the new idle rate
@@ -946,6 +931,7 @@ shortDescriptor
 
 	movlw		1
 	movwf		USB_loop_index,BANKED
+
 sendNextDescriptorByte
 	movf		USB_loop_index,W,BANKED
 	subwf		USB_packet_length,W,BANKED
@@ -958,8 +944,8 @@ sendNextDescriptorByte
 
 	incf		USB_loop_index,F,BANKED
 	goto		sendNextDescriptorByte
-descriptorSent
 
+descriptorSent
 	banksel		BD0IST
 	movlw		0x40
 	xorwf		BD0IST, W, BANKED	; toggle the DATA01 bit
