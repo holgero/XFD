@@ -202,8 +202,7 @@ ServiceUSB
 			break
 		caseset	UIR, TRNIF, ACCESS
 			; a USB transaction is complete
-			call processUSBTransaction
-			break
+			goto	processUSBTransaction
 	ends
 	return
 
@@ -325,31 +324,20 @@ processSetupToken
 		movlw		0x88
 	endi
 	banksel		BD0OST
-	movwf		BD0OST, BANKED		; set EP0 OUT UOWN back to USB and DATA0/DATA1 packet according to request type
+	movwf		BD0OST, BANKED	; set EP0 OUT UOWN back to USB and DATA0/DATA1 packet according to request type
 	bcf			UCON, PKTDIS, ACCESS	; assuming there is nothing to dequeue, clear the packet disable bit
 	banksel		USB_dev_req
 	movlw		NO_REQUEST
 	movwf		USB_dev_req, BANKED			; clear the device request in process
 	movf		USB_buffer_data+bmRequestType, W, BANKED
 	andlw		0x60					; extract request type bits
-	select
-		case STANDARD
-			call		standardRequests
-			break
-		case CLASS
-			call		ClassRequests
-			break
-		case VENDOR
-			call		VendorRequests
-			break
-		default
-			bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-	ends
-	return
+	dispatchRequest	STANDARD, standardRequests
+	dispatchRequest	CLASS, classRequests
+	dispatchRequest	VENDOR, vendorRequests
+	goto		standardRequestsError
 
 standardRequests
-	movf	USB_buffer_data+bRequest, W, BANKED
-
+	movf		USB_buffer_data+bRequest, W, BANKED
 	dispatchRequest	GET_STATUS, getStatusRequest
 	dispatchRequest	CLEAR_FEATURE, setFeatureRequest
 	dispatchRequest	SET_FEATURE, setFeatureRequest
@@ -360,6 +348,7 @@ standardRequests
 	dispatchRequest	GET_INTERFACE, getInterfaceRequest
 	dispatchRequest	SET_INTERFACE, setInterfaceRequest
 
+vendorRequests
 standardRequestsError
 	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
 	return
@@ -793,7 +782,7 @@ getDescriptorRequest
 	ends
 	return
 
-ClassRequests
+classRequests
 	movf		USB_buffer_data+bRequest, W, BANKED
 	select
 		case GET_REPORT
@@ -869,14 +858,6 @@ ClassRequests
 			movlw		0xC8
 			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
 			break
-		default
-			bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-	ends
-	return
-
-VendorRequests
-	movf		USB_buffer_data+bRequest, W, BANKED
-	select
 		default
 			bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
 	ends
