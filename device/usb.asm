@@ -350,193 +350,11 @@ StandardRequests
 	movf		USB_buffer_data+bRequest, W, BANKED
 	select
 		case GET_STATUS
-			movf		USB_buffer_data+bmRequestType, W, BANKED
-			andlw		0x1F					; extract request recipient bits
-			select
-				case RECIPIENT_DEVICE
-					banksel		BD0IAH
-					movf		BD0IAH, W, BANKED
-					movwf		FSR0H, ACCESS
-					movf		BD0IAL, W, BANKED	; get buffer pointer
-					movwf		FSR0L, ACCESS
-					banksel		USB_device_status
-					movf		USB_device_status, W, BANKED	; copy device status byte to EP0 buffer
-					movwf		POSTINC0
-					clrf		INDF0
-					banksel		BD0IBC
-					movlw		0x02
-					movwf		BD0IBC, BANKED		; set byte count to 2
-					movlw		0xC8
-					movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-					break
-				case RECIPIENT_INTERFACE
-					movf		USB_USWSTAT, W, BANKED
-					select
-						case ADDRESS_STATE
-							bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-							break
-						case CONFIG_STATE
-							movlw	NUM_INTERFACES
-							subwf	USB_buffer_data+wIndex,W,BANKED
-							btfsc	STATUS,C,ACCESS
-							goto	StandardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
-
-							banksel	BD0IAH
-							movf	BD0IAH, W, BANKED
-							movwf	FSR0H, ACCESS
-							movf	BD0IAL, W, BANKED	; get buffer pointer
-							movwf	FSR0L, ACCESS
-							clrf	POSTINC0
-							clrf	INDF0
-							movlw	0x02
-							movwf	BD0IBC, BANKED		; set byte count to 2
-							movlw	0xC8
-							movwf	BD0IST, BANKED	; send packet as DATA1, set UOWN bit
-							break
-					ends
-					break
-				case RECIPIENT_ENDPOINT
-					movf		USB_USWSTAT, W, BANKED
-					select
-						case ADDRESS_STATE
-							movf		USB_buffer_data+wIndex, W, BANKED	; get EP
-							andlw		0x0F					; strip off direction bit
-							ifset STATUS, Z, ACCESS				; see if it is EP0
-								banksel		BD0IAH
-								movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
-								movwf		FSR0H, ACCESS
-								movf		BD0IAL, W, BANKED
-								movwf		FSR0L, ACCESS		; ...into FSR0
-								ifset UEP0, EPSTALL, ACCESS
-									movlw		0x01
-								otherwise
-									movlw		0x00
-								endi
-								movwf		POSTINC0
-								clrf		INDF0
-								movlw		0x02
-								movwf		BD0IBC, BANKED		; set byte count to 2
-								movlw		0xC8
-								movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-							otherwise
-								bsf			UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-							endi
-							break
-						case CONFIG_STATE
-							banksel		BD0IAH
-							movf		BD0IAH, W, BANKED		; put EP0 IN buffer pointer...
-							movwf		FSR0H, ACCESS
-							movf		BD0IAL, W, BANKED
-							movwf		FSR0L, ACCESS			; ...into FSR0
-							movlw		high UEP0			; put UEP0 address...
-							movwf		FSR1H, ACCESS
-							movlw		low UEP0
-							movwf		FSR1L, ACCESS			; ...into FSR1
-							banksel		USB_buffer_data+wIndex
-							movf		USB_buffer_data+wIndex, W, BANKED	; get EP and...
-							andlw		0x0F				; ...strip off direction bit
-							ifclr PLUSW1, EPOUTEN, ACCESS
-							andifclr PLUSW1, EPINEN, ACCESS
-								bsf			UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-							otherwise
-								ifset PLUSW1, EPSTALL, ACCESS
-									movlw		0x01
-								otherwise
-									movlw		0x00
-								endi
-								movwf		POSTINC0
-								clrf		INDF0
-								banksel		BD0IBC
-								movlw		0x02
-								movwf		BD0IBC, BANKED		; set byte count to 2
-								movlw		0xC8
-								movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-							endi
-							break
-						default
-							bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-					ends
-					break
-				default
-					bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-			ends
+			call	getStatusRequest
 			break
 		case CLEAR_FEATURE
 		case SET_FEATURE
-			movf		USB_buffer_data+bmRequestType, W, BANKED
-			andlw		0x1F			; extract request recipient bits
-			select
-				case RECIPIENT_DEVICE
-					movf		USB_buffer_data+wValue, W, BANKED
-					select
-						case DEVICE_REMOTE_WAKEUP
-							ifl USB_buffer_data+bRequest, CLEAR_FEATURE
-								bcf			USB_device_status, 1, BANKED
-							otherwise
-								bsf			USB_device_status, 1, BANKED
-							endi
-							banksel		BD0IBC
-							clrf		BD0IBC, BANKED	; set byte count to 0
-							movlw		0xC8
-							movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
-							break
-						default
-							bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-					ends
-					break
-				case RECIPIENT_ENDPOINT
-					movf		USB_USWSTAT, W, BANKED
-					select
-						case ADDRESS_STATE
-							movf		USB_buffer_data+wIndex, W, BANKED	; get EP
-							andlw		0x0F			; strip off direction bit
-							ifset STATUS, Z, ACCESS			; see if it is EP0
-								ifl USB_buffer_data+bRequest, CLEAR_FEATURE
-									bcf		UEP0, EPSTALL, ACCESS
-								otherwise
-									bsf		UEP0, EPSTALL, ACCESS
-								endi
-								banksel		BD0IBC
-								clrf		BD0IBC, BANKED	; set byte count to 0
-								movlw		0xC8
-								movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
-							otherwise
-								bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-							endi
-							break
-						case CONFIG_STATE
-							movlw		high UEP0		; put UEP0 address...
-							movwf		FSR0H, ACCESS
-							movlw		low UEP0
-							movwf		FSR0L, ACCESS		; ...into FSR0
-							movf		USB_buffer_data+wIndex, W, BANKED	; get EP
-							andlw		0x0F			; strip off direction bit
-							addwf		FSR0L, F, ACCESS	; add EP number to FSR0
-							ifset		STATUS, C, ACCESS
-								incf		FSR0H, F, ACCESS
-							endi
-							ifclr INDF0, EPOUTEN, ACCESS
-							andifclr INDF0, EPINEN, ACCESS
-								bsf			UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-							otherwise
-								ifl USB_buffer_data+bRequest, CLEAR_FEATURE
-									bcf		INDF0, EPSTALL, ACCESS
-								otherwise
-									bsf		INDF0, EPSTALL, ACCESS
-								endi
-								banksel		BD0IBC
-								clrf		BD0IBC, BANKED	; set byte count to 0
-								movlw		0xC8
-								movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
-							endi
-							break
-						default
-							bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-					ends
-					break
-				default
-					bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
-			ends
+			call	setFeatureRequest
 			break
 		case SET_ADDRESS
 			ifset USB_buffer_data+wValue, 7, BANKED	; if new device address is illegal, send Request Error
@@ -784,6 +602,200 @@ StandardRequests
 
 StandardRequestsError
 	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
+	return
+
+getStatusRequest
+	movf		USB_buffer_data+bmRequestType, W, BANKED
+	andlw		0x1F					; extract request recipient bits
+	select
+		case RECIPIENT_DEVICE
+			banksel		BD0IAH
+			movf		BD0IAH, W, BANKED
+			movwf		FSR0H, ACCESS
+			movf		BD0IAL, W, BANKED	; get buffer pointer
+			movwf		FSR0L, ACCESS
+			banksel		USB_device_status
+			movf		USB_device_status, W, BANKED	; copy device status byte to EP0 buffer
+			movwf		POSTINC0
+			clrf		INDF0
+			banksel		BD0IBC
+			movlw		0x02
+			movwf		BD0IBC, BANKED		; set byte count to 2
+			movlw		0xC8
+			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
+			break
+		case RECIPIENT_INTERFACE
+			movf		USB_USWSTAT, W, BANKED
+			select
+				case ADDRESS_STATE
+					goto	getStatusRequestError
+					break
+				case CONFIG_STATE
+					movlw	NUM_INTERFACES
+					subwf	USB_buffer_data+wIndex,W,BANKED
+					btfsc	STATUS,C,ACCESS
+					goto	getStatusRequestError	; USB_buffer_data+wIndex < NUM_INTERFACES
+					banksel	BD0IAH
+					movf	BD0IAH, W, BANKED
+					movwf	FSR0H, ACCESS
+					movf	BD0IAL, W, BANKED	; get buffer pointer
+					movwf	FSR0L, ACCESS
+					clrf	POSTINC0
+					clrf	INDF0
+					movlw	0x02
+					movwf	BD0IBC, BANKED		; set byte count to 2
+					movlw	0xC8
+					movwf	BD0IST, BANKED	; send packet as DATA1, set UOWN bit
+					break
+			ends
+			break
+		case RECIPIENT_ENDPOINT
+			movf		USB_USWSTAT, W, BANKED
+			select
+				case ADDRESS_STATE
+					movf		USB_buffer_data+wIndex, W, BANKED	; get EP
+					andlw		0x0F					; strip off direction bit
+					ifset STATUS, Z, ACCESS				; see if it is EP0
+						banksel		BD0IAH
+						movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+						movwf		FSR0H, ACCESS
+						movf		BD0IAL, W, BANKED
+						movwf		FSR0L, ACCESS		; ...into FSR0
+						ifset UEP0, EPSTALL, ACCESS
+							movlw		0x01
+						otherwise
+							movlw		0x00
+						endi
+						movwf		POSTINC0
+						clrf		INDF0
+						movlw		0x02
+						movwf		BD0IBC, BANKED		; set byte count to 2
+						movlw		0xC8
+						movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
+					otherwise
+						goto	getStatusRequestError
+					endi
+					break
+				case CONFIG_STATE
+					banksel		BD0IAH
+					movf		BD0IAH, W, BANKED		; put EP0 IN buffer pointer...
+					movwf		FSR0H, ACCESS
+					movf		BD0IAL, W, BANKED
+					movwf		FSR0L, ACCESS			; ...into FSR0
+					movlw		high UEP0			; put UEP0 address...
+					movwf		FSR1H, ACCESS
+					movlw		low UEP0
+					movwf		FSR1L, ACCESS			; ...into FSR1
+					banksel		USB_buffer_data+wIndex
+					movf		USB_buffer_data+wIndex, W, BANKED	; get EP and...
+					andlw		0x0F				; ...strip off direction bit
+					ifclr PLUSW1, EPOUTEN, ACCESS
+					andifclr PLUSW1, EPINEN, ACCESS
+						goto	getStatusRequestError
+					otherwise
+						ifset PLUSW1, EPSTALL, ACCESS
+							movlw		0x01
+						otherwise
+							movlw		0x00
+						endi
+						movwf		POSTINC0
+						clrf		INDF0
+						banksel		BD0IBC
+						movlw		0x02
+						movwf		BD0IBC, BANKED		; set byte count to 2
+						movlw		0xC8
+						movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
+					endi
+					break
+				default
+					goto	getStatusRequestError
+			ends
+			break
+		default
+			goto	getStatusRequestError
+	ends
+	return
+
+getStatusRequestError
+setFeatureRequestError
+	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
+	return
+
+setFeatureRequest
+	movf		USB_buffer_data+bmRequestType, W, BANKED
+	andlw		0x1F			; extract request recipient bits
+	select
+		case RECIPIENT_DEVICE
+			movf		USB_buffer_data+wValue, W, BANKED
+			select
+				case DEVICE_REMOTE_WAKEUP
+					ifl USB_buffer_data+bRequest, CLEAR_FEATURE
+						bcf		USB_device_status, 1, BANKED
+					otherwise
+						bsf		USB_device_status, 1, BANKED
+					endi
+					banksel		BD0IBC
+					clrf		BD0IBC, BANKED	; set byte count to 0
+					movlw		0xC8
+					movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
+					break
+				default
+					goto		setFeatureRequestError
+			ends
+			break
+		case RECIPIENT_ENDPOINT
+			movf		USB_USWSTAT, W, BANKED
+			select
+				case ADDRESS_STATE
+					movf		USB_buffer_data+wIndex, W, BANKED	; get EP
+					andlw		0x0F			; strip off direction bit
+					ifset STATUS, Z, ACCESS			; see if it is EP0
+						ifl USB_buffer_data+bRequest, CLEAR_FEATURE
+							bcf		UEP0, EPSTALL, ACCESS
+						otherwise
+							bsf		UEP0, EPSTALL, ACCESS
+						endi
+						banksel		BD0IBC
+						clrf		BD0IBC, BANKED	; set byte count to 0
+						movlw		0xC8
+						movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
+					otherwise
+						goto		setFeatureRequestError
+					endi
+					break
+				case CONFIG_STATE
+					movlw		high UEP0		; put UEP0 address...
+					movwf		FSR0H, ACCESS
+					movlw		low UEP0
+					movwf		FSR0L, ACCESS		; ...into FSR0
+					movf		USB_buffer_data+wIndex, W, BANKED	; get EP
+					andlw		0x0F			; strip off direction bit
+					addwf		FSR0L, F, ACCESS	; add EP number to FSR0
+					ifset		STATUS, C, ACCESS
+						incf		FSR0H, F, ACCESS
+					endi
+					ifclr INDF0, EPOUTEN, ACCESS
+					andifclr INDF0, EPINEN, ACCESS
+						goto		setFeatureRequestError
+					otherwise
+						ifl USB_buffer_data+bRequest, CLEAR_FEATURE
+							bcf		INDF0, EPSTALL, ACCESS
+						otherwise
+							bsf		INDF0, EPSTALL, ACCESS
+						endi
+						banksel		BD0IBC
+						clrf		BD0IBC, BANKED	; set byte count to 0
+						movlw		0xC8
+						movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
+					endi
+					break
+				default
+					goto		setFeatureRequestError
+			ends
+			break
+		default
+			goto		setFeatureRequestError
+	ends
 	return
 
 
