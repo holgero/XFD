@@ -356,69 +356,13 @@ StandardRequests
 			goto	setFeatureRequest
 			break
 		case SET_ADDRESS
-			ifset USB_buffer_data+wValue, 7, BANKED	; if new device address is illegal, send Request Error
-				bsf		UEP0, EPSTALL, ACCESS		; set EP0 protocol stall bit to signify Request Error
-			otherwise
-				movlw		SET_ADDRESS
-				movwf		USB_dev_req, BANKED		; processing a SET_ADDRESS request
-				movf		USB_buffer_data+wValue, W, BANKED
-				movwf		USB_address_pending, BANKED	; save new address
-				banksel		BD0IBC
-				clrf		BD0IBC, BANKED			; set byte count to 0
-				movlw		0xC8
-				movwf		BD0IST, BANKED			; send packet as DATA1, set UOWN bit
-			endi
-			break
+			goto	setAddressRequest
 		case GET_DESCRIPTOR
 			goto	getDescriptorRequest
 		case GET_CONFIGURATION
-			banksel		BD0IAH
-			movf		BD0IAH, W, BANKED
-			movwf		FSR0H, ACCESS
-			movf		BD0IAL, W, BANKED
-			movwf		FSR0L, ACCESS
-			banksel		USB_curr_config
-			movf		USB_curr_config, W, BANKED
-			movwf		INDF0			; copy current device configuration to EP0 IN buffer
-			banksel		BD0IBC
-			movlw		0x01
-			movwf		BD0IBC, BANKED		; set EP0 IN byte count to 1
-			movlw		0xC8
-			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-			break
+			goto	getConfigurationRequest
 		case SET_CONFIGURATION
-			movf	USB_buffer_data+wValue,W,BANKED
-			sublw	NUM_CONFIGURATIONS
-			btfss	STATUS,C,ACCESS
-			goto	StandardRequestsError	; USB_buffer_data+wValue > NUM_CONFIGURATIONS
-
-			movf	USB_buffer_data+wValue, W, BANKED
-			movwf	USB_curr_config, BANKED
-			select
-				case 0
-					movlw		ADDRESS_STATE
-					movwf		USB_USWSTAT, BANKED
-					break
-				default
-					movlw		CONFIG_STATE
-					movwf		USB_USWSTAT, BANKED
-					movlw		0x08
-					banksel		BD1IBC
-					movwf		BD1IBC, BANKED		; set EP1 IN byte count to 8 
-					movlw		low (USB_Buffer+0x10)
-					movwf		BD1IAL, BANKED		; set EP1 IN buffer address
-					movlw		high (USB_Buffer+0x10)
-					movwf		BD1IAH, BANKED
-					movlw		0x48
-					movwf		BD1IST, BANKED	; clear UOWN bit (PIC can write EP1 IN buffer)
-					movlw		ENDPT_IN_ONLY
-					movwf		UEP1, ACCESS	; enable EP1 for interrupt in transfers
-			ends
-			banksel		BD0IBC
-			clrf		BD0IBC, BANKED		; set byte count to 0
-			movlw		0xC8
-			movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
-			break
+			goto	setConfigurationRequest
 		case GET_INTERFACE
 			movf		USB_USWSTAT, W, BANKED
 			select
@@ -426,7 +370,7 @@ StandardRequests
 					movlw	NUM_INTERFACES
 					subwf	USB_buffer_data+wIndex,W,BANKED
 					btfsc	STATUS,C,ACCESS
-					goto	StandardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
+					goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
 
 					banksel	BD0IAH
 					movf	BD0IAH, W, BANKED
@@ -450,7 +394,7 @@ StandardRequests
 					movlw	NUM_INTERFACES
 					subwf	USB_buffer_data+wIndex,W,BANKED
 					btfsc	STATUS,C,ACCESS
-					goto	StandardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
+					goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
 
 					movf		USB_buffer_data+wValue, W, BANKED
 					select
@@ -476,11 +420,72 @@ StandardRequests
 	ends
 	return
 
-getDescriptorRequestError
-getStatusRequestError
-setFeatureRequestError
-StandardRequestsError
+standardRequestsError
 	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
+	return
+
+setConfigurationRequest
+	movf	USB_buffer_data+wValue,W,BANKED
+	sublw	NUM_CONFIGURATIONS
+	btfss	STATUS,C,ACCESS
+	goto	standardRequestsError	; USB_buffer_data+wValue > NUM_CONFIGURATIONS
+	movf	USB_buffer_data+wValue, W, BANKED
+	movwf	USB_curr_config, BANKED
+	select
+		case 0
+			movlw		ADDRESS_STATE
+			movwf		USB_USWSTAT, BANKED
+			break
+		default
+			movlw		CONFIG_STATE
+			movwf		USB_USWSTAT, BANKED
+			movlw		0x08
+			banksel		BD1IBC
+			movwf		BD1IBC, BANKED		; set EP1 IN byte count to 8 
+			movlw		low (USB_Buffer+0x10)
+			movwf		BD1IAL, BANKED		; set EP1 IN buffer address
+			movlw		high (USB_Buffer+0x10)
+			movwf		BD1IAH, BANKED
+			movlw		0x48
+			movwf		BD1IST, BANKED	; clear UOWN bit (PIC can write EP1 IN buffer)
+			movlw		ENDPT_IN_ONLY
+			movwf		UEP1, ACCESS	; enable EP1 for interrupt in transfers
+	ends
+	banksel		BD0IBC
+	clrf		BD0IBC, BANKED		; set byte count to 0
+	movlw		0xC8
+	movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
+	return
+
+getConfigurationRequest
+	banksel		BD0IAH
+	movf		BD0IAH, W, BANKED
+	movwf		FSR0H, ACCESS
+	movf		BD0IAL, W, BANKED
+	movwf		FSR0L, ACCESS
+	banksel		USB_curr_config
+	movf		USB_curr_config, W, BANKED
+	movwf		INDF0			; copy current device configuration to EP0 IN buffer
+	banksel		BD0IBC
+	movlw		0x01
+	movwf		BD0IBC, BANKED		; set EP0 IN byte count to 1
+	movlw		0xC8
+	movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
+	return
+
+setAddressRequest
+	ifset USB_buffer_data+wValue, 7, BANKED	; if new device address is illegal, send Request Error
+		goto		standardRequestsError
+	otherwise
+		movlw		SET_ADDRESS
+		movwf		USB_dev_req, BANKED		; processing a SET_ADDRESS request
+		movf		USB_buffer_data+wValue, W, BANKED
+		movwf		USB_address_pending, BANKED	; save new address
+		banksel		BD0IBC
+		clrf		BD0IBC, BANKED			; set byte count to 0
+		movlw		0xC8
+		movwf		BD0IST, BANKED			; send packet as DATA1, set UOWN bit
+	endi
 	return
 
 getStatusRequest
@@ -507,13 +512,13 @@ getStatusRequest
 			movf		USB_USWSTAT, W, BANKED
 			select
 				case ADDRESS_STATE
-					goto	getStatusRequestError
+					goto	standardRequestsError
 					break
 				case CONFIG_STATE
 					movlw	NUM_INTERFACES
 					subwf	USB_buffer_data+wIndex,W,BANKED
 					btfsc	STATUS,C,ACCESS
-					goto	getStatusRequestError	; USB_buffer_data+wIndex < NUM_INTERFACES
+					goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
 					banksel	BD0IAH
 					movf	BD0IAH, W, BANKED
 					movwf	FSR0H, ACCESS
@@ -552,7 +557,7 @@ getStatusRequest
 						movlw		0xC8
 						movwf		BD0IST, BANKED		; send packet as DATA1, set UOWN bit
 					otherwise
-						goto	getStatusRequestError
+						goto	standardRequestsError
 					endi
 					break
 				case CONFIG_STATE
@@ -570,7 +575,7 @@ getStatusRequest
 					andlw		0x0F				; ...strip off direction bit
 					ifclr PLUSW1, EPOUTEN, ACCESS
 					andifclr PLUSW1, EPINEN, ACCESS
-						goto	getStatusRequestError
+						goto	standardRequestsError
 					otherwise
 						ifset PLUSW1, EPSTALL, ACCESS
 							movlw		0x01
@@ -587,11 +592,11 @@ getStatusRequest
 					endi
 					break
 				default
-					goto	getStatusRequestError
+					goto	standardRequestsError
 			ends
 			break
 		default
-			goto	getStatusRequestError
+			goto	standardRequestsError
 	ends
 	return
 
@@ -614,7 +619,7 @@ setFeatureRequest
 					movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
 					break
 				default
-					goto		setFeatureRequestError
+					goto		standardRequestsError
 			ends
 			break
 		case RECIPIENT_ENDPOINT
@@ -634,7 +639,7 @@ setFeatureRequest
 						movlw		0xC8
 						movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
 					otherwise
-						goto		setFeatureRequestError
+						goto		standardRequestsError
 					endi
 					break
 				case CONFIG_STATE
@@ -650,7 +655,7 @@ setFeatureRequest
 					endi
 					ifclr INDF0, EPOUTEN, ACCESS
 					andifclr INDF0, EPINEN, ACCESS
-						goto		setFeatureRequestError
+						goto		standardRequestsError
 					otherwise
 						ifl USB_buffer_data+bRequest, CLEAR_FEATURE
 							bcf		INDF0, EPSTALL, ACCESS
@@ -664,11 +669,11 @@ setFeatureRequest
 					endi
 					break
 				default
-					goto		setFeatureRequestError
+					goto		standardRequestsError
 			ends
 			break
 		default
-			goto		setFeatureRequestError
+			goto		standardRequestsError
 	ends
 	return
 
@@ -712,7 +717,7 @@ getDescriptorRequest
 				endi
 				call		SendDescriptorPacket
 			otherwise
-				goto		getDescriptorRequestError
+				goto		standardRequestsError
 			endi
 			break
 		case STRING
@@ -742,7 +747,7 @@ getDescriptorRequest
 				endi
 				call		SendDescriptorPacket
 			otherwise
-				goto		getDescriptorRequestError
+				goto		standardRequestsError
 			endi
 			break
 		case HID
@@ -766,7 +771,7 @@ getDescriptorRequest
 				endi
 				call		SendDescriptorPacket
 			otherwise
-				goto		getDescriptorRequestError
+				goto		standardRequestsError
 			endi
 			break
 		case REPORT
@@ -790,11 +795,11 @@ getDescriptorRequest
 				endi
 				call		SendDescriptorPacket
 			otherwise
-				goto		getDescriptorRequestError
+				goto		standardRequestsError
 			endi
 			break
 		default
-			goto		getDescriptorRequestError
+			goto		standardRequestsError
 	ends
 	return
 
