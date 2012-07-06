@@ -350,11 +350,10 @@ StandardRequests
 	movf		USB_buffer_data+bRequest, W, BANKED
 	select
 		case GET_STATUS
-			call	getStatusRequest
-			break
+			goto	getStatusRequest
 		case CLEAR_FEATURE
 		case SET_FEATURE
-			call	setFeatureRequest
+			goto	setFeatureRequest
 			break
 		case SET_ADDRESS
 			ifset USB_buffer_data+wValue, 7, BANKED	; if new device address is illegal, send Request Error
@@ -371,8 +370,7 @@ StandardRequests
 			endi
 			break
 		case GET_DESCRIPTOR
-			call	getDescriptorRequest
-			break
+			goto	getDescriptorRequest
 		case GET_CONFIGURATION
 			banksel		BD0IAH
 			movf		BD0IAH, W, BANKED
@@ -478,6 +476,9 @@ StandardRequests
 	ends
 	return
 
+getDescriptorRequestError
+getStatusRequestError
+setFeatureRequestError
 StandardRequestsError
 	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
 	return
@@ -592,12 +593,6 @@ getStatusRequest
 		default
 			goto	getStatusRequestError
 	ends
-	return
-
-getDescriptorRequestError
-getStatusRequestError
-setFeatureRequestError
-	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
 	return
 
 setFeatureRequest
