@@ -676,15 +676,12 @@ getValidStringDescriptorRequest		; allright string index <= 2
 getHidDescriptorRequest
 	bcf	USB_error_flags, 0, BANKED
 	movf	USB_buffer_data+wValue, W, BANKED
-	select
-		case 0
-			movlw		low (HID1-Descriptor_begin)
-			break
-		default
-			bsf			USB_error_flags, 0, BANKED
-	ends
-	btfsc	USB_error_flags, 0, BANKED
+	btfsc	STATUS, Z, ACCESS	; skip if not zero
+	goto	getHidDescriptor0
+	bsf	USB_error_flags, 0, BANKED
 	goto	standardRequestsError
+getHidDescriptor0
+	movlw	low (HID1-Descriptor_begin)
 	movwf	USB_desc_ptr, BANKED
 	call	Descriptor		; get descriptor length
 	movwf	USB_bytes_left, BANKED
@@ -693,17 +690,14 @@ getHidDescriptorRequest
 getReportDescriptorRequest
 	bcf	USB_error_flags, 0, BANKED
 	movf	USB_buffer_data+wValue, W, BANKED
-	select
-		case 0
-			movlw		REPORT_DESCRIPTOR_LENGTH
-			movwf		USB_bytes_left, BANKED	; set descriptor length
-			movlw		low (Report1-Descriptor_begin)
-			break
-		default
-			bsf		USB_error_flags, 0, BANKED
-	ends
-	btfsc	USB_error_flags, 0, BANKED
+	btfsc	STATUS, Z, ACCESS	; skip if not zero
+	goto	getReportDescriptor0
+	bsf	USB_error_flags, 0, BANKED
 	goto	standardRequestsError
+getReportDescriptor0
+	movlw	REPORT_DESCRIPTOR_LENGTH
+	movwf	USB_bytes_left, BANKED	; set descriptor length
+	movlw	low (Report1-Descriptor_begin)
 	movwf	USB_desc_ptr, BANKED
 	goto	sendDescriptorRequestAnswer
 
