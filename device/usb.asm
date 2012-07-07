@@ -448,14 +448,12 @@ getConfigurationRequest
 setAddressRequest
 	ifset USB_buffer_data+wValue, 7, BANKED	; if new device address is illegal, send Request Error
 		goto		standardRequestsError
-	otherwise
-		movlw		SET_ADDRESS
-		movwf		USB_dev_req, BANKED		; processing a SET_ADDRESS request
-		movf		USB_buffer_data+wValue, W, BANKED
-		movwf		USB_address_pending, BANKED	; save new address
-		goto		sendZeroByteAnswer
 	endi
-	return
+	movlw		SET_ADDRESS
+	movwf		USB_dev_req, BANKED		; processing a SET_ADDRESS request
+	movf		USB_buffer_data+wValue, W, BANKED
+	movwf		USB_address_pending, BANKED	; save new address
+	goto		sendZeroByteAnswer
 
 getStatusRequest
 	movf		USB_buffer_data+bmRequestType, W, BANKED
@@ -502,28 +500,24 @@ getStatusRequest
 			movf		USB_USWSTAT, W, BANKED
 			select
 				case ADDRESS_STATE
-					movf		USB_buffer_data+wIndex, W, BANKED	; get EP
-					andlw		0x0F					; strip off direction bit
-					ifset STATUS, Z, ACCESS				; see if it is EP0
-						banksel		BD0IAH
-						movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
-						movwf		FSR0H, ACCESS
-						movf		BD0IAL, W, BANKED
-						movwf		FSR0L, ACCESS		; ...into FSR0
-						ifset UEP0, EPSTALL, ACCESS
-							movlw		0x01
-						otherwise
-							movlw		0x00
-						endi
-						movwf		POSTINC0
-						clrf		INDF0
-						movlw		0x02
-						movwf		BD0IBC, BANKED	; set byte count to 2
-						goto	sendAnswer
-					otherwise
-						goto	standardRequestsError
+					movf	USB_buffer_data+wIndex, W, BANKED ; get EP
+					andlw	0x0F		; strip off direction bit
+					btfss	STATUS,Z,ACCESS		; is it EP0?
+					goto	standardRequestsError	; not zero
+					banksel		BD0IAH
+					movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+					movwf		FSR0H, ACCESS
+					movf		BD0IAL, W, BANKED
+					movwf		FSR0L, ACCESS		; ...into FSR0
+					movlw		0x00
+					ifset UEP0, EPSTALL, ACCESS
+						movlw		0x01
 					endi
-					break
+					movwf	POSTINC0
+					clrf	INDF0
+					movlw	0x02
+					movwf	BD0IBC, BANKED	; set byte count to 2
+					goto	sendAnswer
 				case CONFIG_STATE
 					banksel		BD0IAH
 					movf		BD0IAH, W, BANKED		; put EP0 IN buffer pointer...
@@ -588,17 +582,14 @@ setFeatureRequest
 				case ADDRESS_STATE
 					movf	USB_buffer_data+wIndex, W, BANKED ; get EP
 					andlw	0x0F	; strip off direction bit
-					ifset STATUS, Z, ACCESS		; see if it is EP0
-						bcf	UEP0, EPSTALL, ACCESS
-						movf	USB_buffer_data+bRequest, W, BANKED
-						sublw	CLEAR_FEATURE
-						btfss	STATUS, Z ;skip if == CLEAR_FEATURE
-						bsf	UEP0, EPSTALL, ACCESS
-						goto	sendZeroByteAnswer
-					otherwise
-						goto	standardRequestsError
-					endi
-					break
+					btfss	STATUS,Z,ACCESS		; is it EP0?
+					goto	standardRequestsError	; not zero
+					bcf	UEP0, EPSTALL, ACCESS
+					movf	USB_buffer_data+bRequest, W, BANKED
+					sublw	CLEAR_FEATURE
+					btfss	STATUS, Z	; skip if == CLEAR_FEATURE
+					bsf	UEP0, EPSTALL, ACCESS
+					goto	sendZeroByteAnswer
 				case CONFIG_STATE
 					movlw		high UEP0		; put UEP0 address...
 					movwf		FSR0H, ACCESS

@@ -288,22 +288,6 @@ _ifclausecount ++
 		endm
 
 ; -------------------------------------------------------------------------------
-; OTHERWISE (START OF AN OTHERWISE CLAUSE IN AN IF STATEMENT)
-; -------------------------------------------------------------------------------
-; Syntax:		OTHERWISE
-; -------------------------------------------------------------------------------
-; This macro begins the sequence of instructions that is executed if none
-; of the other conditions held.  The otherwise block is optional.  Note that
-; this would normally be called 'else', but that was taken by MPASM for 
-; conditional assembly structures.
-; -------------------------------------------------------------------------------
-otherwise	macro
-		goto	_endif#v(_ifstack#v(_ifstackptr - 1))
-	target	_if, _ifstack#v(_ifstackptr - 1), _ifclausecount
-_ifclausecount ++
-		endm
-
-; -------------------------------------------------------------------------------
 ; ENDI (END OF AN IF STATEMENT)
 ; -------------------------------------------------------------------------------
 ; Syntax:		endi
