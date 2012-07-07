@@ -288,33 +288,6 @@ _ifclausecount ++
 		endm
 
 ; -------------------------------------------------------------------------------
-; IFCLR (START OF AN IF CLAUSE IN AN IF STATEMENT)
-; -------------------------------------------------------------------------------
-; Syntax:		ifclr reg, bit, a
-; -------------------------------------------------------------------------------
-; Arguments:	reg		the register containing the bit to be tested
-;				bit		a literal value between 0 and 7 specifying the bit
-;						position to be tested
-;				a		if a is 0, the access bank is selected.  if a is 1,
-;						the BSR specifies the bank used to select reg.
-; -------------------------------------------------------------------------------
-; This macro tests the specified bit in register reg; if it is clear, the 
-; instructions following the ifclr macro are executed.  Otherwise, the next
-; case is tested.
-; -------------------------------------------------------------------------------
-ifclr		macro	reg,bit,a
-		vrbl	_ifclausestack, _ifstackptr, _ifclausecount
-		vrbl	_ifstack, _ifstackptr, _ifcount
-_ifstackptr ++
-_ifclausecount = 0
-	target	_if, _ifstack#v(_ifstackptr - 1), _ifclausecount
-		btfsc	reg,bit,a
-		brnch	_if, _ifstack#v(_ifstackptr - 1), (_ifclausecount + 1)
-_ifcount ++
-_ifclausecount ++
-		endm
-
-; -------------------------------------------------------------------------------
 ; OTHERWISE (START OF AN OTHERWISE CLAUSE IN AN IF STATEMENT)
 ; -------------------------------------------------------------------------------
 ; Syntax:		OTHERWISE

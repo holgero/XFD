@@ -653,18 +653,16 @@ getDescriptorRequest
 				default
 					bsf		USB_error_flags, 0, BANKED
 			ends
-			ifclr USB_error_flags, 0, BANKED
-				addlw		0x02		; add offset for wTotalLength
-				movwf		USB_desc_ptr, BANKED
-				call		Descriptor	; get total descriptor length
-				movwf		USB_bytes_left, BANKED
-				movlw		0x02
-				subwf		USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
-				goto 		sendDescriptorRequestAnswer
-			otherwise
+			ifset USB_error_flags, 0, BANKED
 				goto		standardRequestsError
 			endi
-			break
+			addlw		0x02		; add offset for wTotalLength
+			movwf		USB_desc_ptr, BANKED
+			call		Descriptor	; get total descriptor length
+			movwf		USB_bytes_left, BANKED
+			movlw		0x02
+			subwf		USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
+			goto 		sendDescriptorRequestAnswer
 		case STRING
 			bcf		USB_error_flags, 0, BANKED
 			movf		USB_buffer_data+wValue, W, BANKED
@@ -681,15 +679,13 @@ getDescriptorRequest
 				default
 					bsf		USB_error_flags, 0, BANKED
 			ends
-			ifclr USB_error_flags, 0, BANKED
-				movwf		USB_desc_ptr, BANKED
-				call		Descriptor	; get descriptor length
-				movwf		USB_bytes_left, BANKED
-				goto		sendDescriptorRequestAnswer
-			otherwise
+			ifset USB_error_flags, 0, BANKED
 				goto		standardRequestsError
 			endi
-			break
+			movwf		USB_desc_ptr, BANKED
+			call		Descriptor	; get descriptor length
+			movwf		USB_bytes_left, BANKED
+			goto		sendDescriptorRequestAnswer
 		case HID
 			bcf		USB_error_flags, 0, BANKED
 			movf		USB_buffer_data+wValue, W, BANKED
@@ -700,15 +696,13 @@ getDescriptorRequest
 				default
 					bsf			USB_error_flags, 0, BANKED
 			ends
-			ifclr USB_error_flags, 0, BANKED
-				movwf		USB_desc_ptr, BANKED
-				call		Descriptor	; get descriptor length
-				movwf		USB_bytes_left, BANKED
-				goto		sendDescriptorRequestAnswer
-			otherwise
+			ifset USB_error_flags, 0, BANKED
 				goto		standardRequestsError
 			endi
-			break
+			movwf		USB_desc_ptr, BANKED
+			call		Descriptor	; get descriptor length
+			movwf		USB_bytes_left, BANKED
+			goto		sendDescriptorRequestAnswer
 		case REPORT
 			bcf		USB_error_flags, 0, BANKED
 			movf		USB_buffer_data+wValue, W, BANKED
@@ -721,13 +715,11 @@ getDescriptorRequest
 				default
 					bsf		USB_error_flags, 0, BANKED
 			ends
-			ifclr USB_error_flags, 0, BANKED
-				movwf		USB_desc_ptr, BANKED
-				goto		sendDescriptorRequestAnswer
-			otherwise
+			ifset USB_error_flags, 0, BANKED
 				goto		standardRequestsError
 			endi
-			break
+			movwf		USB_desc_ptr, BANKED
+			goto		sendDescriptorRequestAnswer
 		default
 			goto		standardRequestsError
 	ends
