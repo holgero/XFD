@@ -637,19 +637,13 @@ getDescriptorRequest
 			movwf		USB_desc_ptr, BANKED
 			call		Descriptor		; get descriptor length
 			movwf		USB_bytes_left, BANKED
-			ifl USB_buffer_data+(wLength+1), 0
-			andiffLT USB_buffer_data+wLength, USB_bytes_left
-				movf		USB_buffer_data+wLength, W, BANKED
-				movwf		USB_bytes_left, BANKED
-			endi
-			call		SendDescriptorPacket
-			break
+			goto		sendDescriptorRequestAnswer
 		case CONFIGURATION
 			bcf		USB_error_flags, 0, BANKED
 			movf		USB_buffer_data+wValue, W, BANKED
 			select
 				case 0
-					movlw		low (Configuration1-Descriptor_begin)
+					movlw	low (Configuration1-Descriptor_begin)
 					break
 				default
 					bsf		USB_error_flags, 0, BANKED
@@ -661,12 +655,7 @@ getDescriptorRequest
 				movwf		USB_bytes_left, BANKED
 				movlw		0x02
 				subwf		USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
-				ifl USB_buffer_data+(wLength+1), 0
-				andiffLT USB_buffer_data+wLength, USB_bytes_left
-					movf		USB_buffer_data+wLength, W, BANKED
-					movwf		USB_bytes_left, BANKED
-				endi
-				call		SendDescriptorPacket
+				goto 		sendDescriptorRequestAnswer
 			otherwise
 				goto		standardRequestsError
 			endi
@@ -691,12 +680,7 @@ getDescriptorRequest
 				movwf		USB_desc_ptr, BANKED
 				call		Descriptor	; get descriptor length
 				movwf		USB_bytes_left, BANKED
-				ifl USB_buffer_data+(wLength+1), 0
-				andiffLT USB_buffer_data+wLength, USB_bytes_left
-					movf		USB_buffer_data+wLength, W, BANKED
-					movwf		USB_bytes_left, BANKED
-				endi
-				call		SendDescriptorPacket
+				goto		sendDescriptorRequestAnswer
 			otherwise
 				goto		standardRequestsError
 			endi
@@ -715,12 +699,7 @@ getDescriptorRequest
 				movwf		USB_desc_ptr, BANKED
 				call		Descriptor	; get descriptor length
 				movwf		USB_bytes_left, BANKED
-			ifl USB_buffer_data+(wLength+1), 0
-				andiffLT USB_buffer_data+wLength, USB_bytes_left
-					movf		USB_buffer_data+wLength, W, BANKED
-					movwf		USB_bytes_left, BANKED
-				endi
-				call		SendDescriptorPacket
+				goto		sendDescriptorRequestAnswer
 			otherwise
 				goto		standardRequestsError
 			endi
@@ -739,12 +718,7 @@ getDescriptorRequest
 			ends
 			ifclr USB_error_flags, 0, BANKED
 				movwf		USB_desc_ptr, BANKED
-				ifl USB_buffer_data+(wLength+1), 0
-				andiffLT USB_buffer_data+wLength, USB_bytes_left
-					movf		USB_buffer_data+wLength, W, BANKED
-					movwf		USB_bytes_left, BANKED
-				endi
-				call		SendDescriptorPacket
+				goto		sendDescriptorRequestAnswer
 			otherwise
 				goto		standardRequestsError
 			endi
@@ -843,8 +817,7 @@ processInToken
 					ends
 					break
 				case GET_DESCRIPTOR
-					call		SendDescriptorPacket
-					break
+					goto		SendDescriptorPacket
 			ends
 			break
 		case EP1
@@ -895,6 +868,13 @@ processOutToken
 			break
 	ends
 	return
+
+sendDescriptorRequestAnswer
+	ifl USB_buffer_data+(wLength+1), 0
+	andiffLT USB_buffer_data+wLength, USB_bytes_left
+		movf	USB_buffer_data+wLength, W, BANKED
+		movwf	USB_bytes_left, BANKED
+	endi
 
 SendDescriptorPacket
 	banksel		USB_bytes_left
