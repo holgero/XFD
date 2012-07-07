@@ -6,7 +6,6 @@
 ; includes
 #include <p18f2550.inc>
 #include "usb_defs.inc"
-#include "tableread.inc"
 #include "ENGR2210.inc"
 
 ;**************************************************************
@@ -44,7 +43,22 @@ LED_states		RES	5
 usb_code		CODE	0x00082a
 
 Descriptor
-	tableread	Descriptor_begin, USB_desc_ptr
+	movlw		upper Descriptor_begin
+	movwf		TBLPTRU, ACCESS
+	movlw		high Descriptor_begin
+	movwf		TBLPTRH, ACCESS
+	movlw		low Descriptor_begin
+	banksel		USB_desc_ptr
+	addwf		USB_desc_ptr, W, BANKED
+	btfss		STATUS, C, ACCESS
+	goto		decriptorAddressCalculated
+	incfsz		TBLPTRH, F, ACCESS
+	goto		decriptorAddressCalculated
+	incf		TBLPTRU, F, ACCESS
+decriptorAddressCalculated
+	movwf		TBLPTRL, ACCESS
+	tblrd*
+	movf		TABLAT, W, ACCESS
 	return
 
 Descriptor_begin

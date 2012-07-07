@@ -15,7 +15,7 @@ other-options=
 slb=false
 
 [Files]
-inputFiles=usb.asm,usb_defs.inc,ENGR2210.inc,main.asm,wait.asm,tableread.inc
+inputFiles=usb.asm,usb_defs.inc,ENGR2210.inc,main.asm,wait.asm
 
 [General]
 description=

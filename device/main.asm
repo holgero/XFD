@@ -2,7 +2,6 @@
 ; USB connected device which switches some LEDs on and off
 ; main routine and configuration
 #include <p18f2550.inc>
-#include "tableread.inc"
 
 ;**************************************************************
 ; configuration
