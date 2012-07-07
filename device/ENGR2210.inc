@@ -349,33 +349,6 @@ _ifclausecount ++
 		endm
 
 ; -------------------------------------------------------------------------------
-; ANDIFF (CONTINUATION OF AN IF/ELSIF CLAUSE IN AN IF STATEMENT)
-; -------------------------------------------------------------------------------
-; Syntax:		andiff var1, relop, var2
-; -------------------------------------------------------------------------------
-; Arguments:	var1	the first register whose contents are to be tested 
-;							against those of a second register
-;				relop	the relational operator to use for the test, which 
-;							must be one of ==, !=, <, <=, >, >=
-;				var2	a second register
-; -------------------------------------------------------------------------------
-; This macro performs a comparison between the contents of register var1 and 
-; those of register var2.  If the specified relation holds, the block of 
-; statements following the iff are executed.  This macro makes use of the W 
-; register.
-; -------------------------------------------------------------------------------
-; This macro borrows heavily from Myke Predko's structured programming macros,
-; which are described on pp. 542-546 of the second edition of Programming and 
-; Customizing PICmicro Microcontrollers.
-; -------------------------------------------------------------------------------
-andiffLT	macro	var1,var2
-		movf	var2,W,BANKED
-		subwf	var1,W,BANKED
-		btfsc	STATUS,C,ACCESS
-		brnch	_if, _ifstack#v(_ifstackptr - 1), _ifclausecount
-		endm
-
-; -------------------------------------------------------------------------------
 ; OTHERWISE (START OF AN OTHERWISE CLAUSE IN AN IF STATEMENT)
 ; -------------------------------------------------------------------------------
 ; Syntax:		OTHERWISE

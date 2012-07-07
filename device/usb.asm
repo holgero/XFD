@@ -870,11 +870,15 @@ processOutToken
 	return
 
 sendDescriptorRequestAnswer
-	ifl USB_buffer_data+(wLength+1), 0
-	andiffLT USB_buffer_data+wLength, USB_bytes_left
-		movf	USB_buffer_data+wLength, W, BANKED
-		movwf	USB_bytes_left, BANKED
-	endi
+	movf		USB_buffer_data+(wLength+1),W,BANKED
+	btfss		STATUS,Z,ACCESS		; skip if zero
+	goto		SendDescriptorPacket
+	movf		USB_bytes_left,W,BANKED
+	subwf		USB_buffer_data+wLength,W,BANKED
+	btfsc		STATUS,C,ACCESS	
+	goto		SendDescriptorPacket	; USB_buffer_data+wLength >= USB_bytes_left
+	movf		USB_buffer_data+wLength, W, BANKED
+	movwf		USB_bytes_left, BANKED
 
 SendDescriptorPacket
 	banksel		USB_bytes_left
