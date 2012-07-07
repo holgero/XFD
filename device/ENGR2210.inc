@@ -376,22 +376,6 @@ andiffLT	macro	var1,var2
 		endm
 
 ; -------------------------------------------------------------------------------
-; ANDIFCLR (CONTINUATION OF AN IF/ELSIF CLAUSE IN AN IF STATEMENT)
-; -------------------------------------------------------------------------------
-; Syntax:		andifclr reg, bit, a
-; -------------------------------------------------------------------------------
-; Arguments:	reg		the register containing the bit to be tested
-;				bit		a literal value between 0 and 7 specifying the bit
-;						position to be tested
-;				a		if a is 0, the access bank is selected.  if a is 1,
-;						the BSR specifies the bank used to select reg.
-; -------------------------------------------------------------------------------
-andifclr	macro	reg,bit,a
-		btfsc	reg,bit,a
-		brnch	_if, _ifstack#v(_ifstackptr - 1), _ifclausecount
-		endm
-
-; -------------------------------------------------------------------------------
 ; OTHERWISE (START OF AN OTHERWISE CLAUSE IN AN IF STATEMENT)
 ; -------------------------------------------------------------------------------
 ; Syntax:		OTHERWISE

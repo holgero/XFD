@@ -538,24 +538,25 @@ getStatusRequest
 					movwf		FSR1L, ACCESS			; ...into FSR1
 					banksel		USB_buffer_data+wIndex
 					movf		USB_buffer_data+wIndex, W, BANKED	; get EP and...
-					andlw		0x0F				; ...strip off direction bit
-					ifclr PLUSW1, EPOUTEN, ACCESS
-					andifclr PLUSW1, EPINEN, ACCESS
-						goto	standardRequestsError
-					otherwise
-						ifset PLUSW1, EPSTALL, ACCESS
-							movlw		0x01
-						otherwise
-							movlw		0x00
-						endi
-						movwf		POSTINC0
-						clrf		INDF0
-						banksel		BD0IBC
-						movlw		0x02
-						movwf		BD0IBC, BANKED	; set byte count to 2
-						goto		sendAnswer
-					endi
-					break
+					andlw		0x0F			; ...strip off direction bit
+
+					btfsc		PLUSW1, EPOUTEN, ACCESS
+					goto		okToReply
+					btfss		PLUSW1, EPINEN, ACCESS
+					; neither EPOUTEN nor EPINEN are set
+					goto		standardRequestsError
+okToReply
+					; send back the state of the EPSTALL bit + 0 byte
+					movlw		0x01
+					btfss		PLUSW1, EPSTALL, ACCESS
+					clrw
+					movwf		POSTINC0
+					clrf		INDF0
+					banksel		BD0IBC
+					movlw		0x02
+					movwf		BD0IBC, BANKED	; set byte count to 2
+					goto		sendAnswer
+
 				default
 					goto	standardRequestsError
 			ends
@@ -611,18 +612,18 @@ setFeatureRequest
 					ifset		STATUS, C, ACCESS
 						incf		FSR0H, F, ACCESS
 					endi
-					ifclr INDF0, EPOUTEN, ACCESS
-					andifclr INDF0, EPINEN, ACCESS
-						goto		standardRequestsError
+					btfsc		INDF0, EPOUTEN, ACCESS
+					goto		continueAnswerConfigState
+					btfss		INDF0, EPINEN, ACCESS
+					; neither EPOUTEN nor EPINEN are set: error
+					goto		standardRequestsError
+continueAnswerConfigState
+					ifl USB_buffer_data+bRequest, CLEAR_FEATURE
+						bcf		INDF0, EPSTALL, ACCESS
 					otherwise
-						ifl USB_buffer_data+bRequest, CLEAR_FEATURE
-							bcf		INDF0, EPSTALL, ACCESS
-						otherwise
-							bsf		INDF0, EPSTALL, ACCESS
-						endi
-						goto	sendZeroByteAnswer
+						bsf		INDF0, EPSTALL, ACCESS
 					endi
-					break
+					goto	sendZeroByteAnswer
 				default
 					goto	standardRequestsError
 			ends
