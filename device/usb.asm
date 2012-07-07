@@ -446,9 +446,8 @@ getConfigurationRequest
 	goto		sendAnswer
 
 setAddressRequest
-	ifset USB_buffer_data+wValue, 7, BANKED	; if new device address is illegal, send Request Error
-		goto		standardRequestsError
-	endi
+	btfsc		USB_buffer_data+wValue, 7, BANKED 
+	goto		standardRequestsError		; new device address illegal
 	movlw		SET_ADDRESS
 	movwf		USB_dev_req, BANKED		; processing a SET_ADDRESS request
 	movf		USB_buffer_data+wValue, W, BANKED
@@ -504,15 +503,14 @@ getStatusRequest
 					andlw	0x0F		; strip off direction bit
 					btfss	STATUS,Z,ACCESS		; is it EP0?
 					goto	standardRequestsError	; not zero
-					banksel		BD0IAH
-					movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
-					movwf		FSR0H, ACCESS
-					movf		BD0IAL, W, BANKED
-					movwf		FSR0L, ACCESS		; ...into FSR0
-					movlw		0x00
-					ifset UEP0, EPSTALL, ACCESS
-						movlw		0x01
-					endi
+					banksel	BD0IAH
+					movf	BD0IAH, W, BANKED ; put EP0 IN buffer ptr
+					movwf	FSR0H, ACCESS
+					movf	BD0IAL, W, BANKED
+					movwf	FSR0L, ACCESS		; ...into FSR0
+					movlw	0x00
+					btfsc	UEP0, EPSTALL, ACCESS
+					movlw	0x01
 					movwf	POSTINC0
 					clrf	INDF0
 					movlw	0x02
@@ -598,9 +596,8 @@ setFeatureRequest
 					movf		USB_buffer_data+wIndex, W, BANKED	; get EP
 					andlw		0x0F			; strip off direction bit
 					addwf		FSR0L, F, ACCESS	; add EP number to FSR0
-					ifset		STATUS, C, ACCESS
-						incf		FSR0H, F, ACCESS
-					endi
+					btfsc		STATUS, C, ACCESS
+					incf		FSR0H, F, ACCESS
 					btfsc		INDF0, EPOUTEN, ACCESS
 					goto		continueAnswerConfigState
 					btfss		INDF0, EPINEN, ACCESS
@@ -644,9 +641,8 @@ getDescriptorRequest
 				default
 					bsf		USB_error_flags, 0, BANKED
 			ends
-			ifset USB_error_flags, 0, BANKED
-				goto		standardRequestsError
-			endi
+			btfsc		USB_error_flags, 0, BANKED
+			goto		standardRequestsError
 			addlw		0x02		; add offset for wTotalLength
 			movwf		USB_desc_ptr, BANKED
 			call		Descriptor	; get total descriptor length
@@ -670,9 +666,8 @@ getDescriptorRequest
 				default
 					bsf		USB_error_flags, 0, BANKED
 			ends
-			ifset USB_error_flags, 0, BANKED
-				goto		standardRequestsError
-			endi
+			btfsc		USB_error_flags, 0, BANKED
+			goto		standardRequestsError
 			movwf		USB_desc_ptr, BANKED
 			call		Descriptor	; get descriptor length
 			movwf		USB_bytes_left, BANKED
@@ -687,9 +682,8 @@ getDescriptorRequest
 				default
 					bsf			USB_error_flags, 0, BANKED
 			ends
-			ifset USB_error_flags, 0, BANKED
-				goto		standardRequestsError
-			endi
+			btfsc		USB_error_flags, 0, BANKED
+			goto		standardRequestsError
 			movwf		USB_desc_ptr, BANKED
 			call		Descriptor	; get descriptor length
 			movwf		USB_bytes_left, BANKED
@@ -706,9 +700,8 @@ getDescriptorRequest
 				default
 					bsf		USB_error_flags, 0, BANKED
 			ends
-			ifset USB_error_flags, 0, BANKED
-				goto		standardRequestsError
-			endi
+			btfsc		USB_error_flags, 0, BANKED
+			goto		standardRequestsError
 			movwf		USB_desc_ptr, BANKED
 			goto		sendDescriptorRequestAnswer
 		default
