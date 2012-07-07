@@ -179,30 +179,6 @@ _casecount = _casestack#v(_selstackptr)
 		endm
 
 ; -------------------------------------------------------------------------------
-; CASESET (START OF A CASE IN A SELECT STATEMENT)
-; -------------------------------------------------------------------------------
-; Syntax:		caseset reg, bit, a
-; -------------------------------------------------------------------------------
-; Arguments:	reg		the register containing the bit to be tested
-;				bit		a literal value between 0 and 7 specifying the bit
-;						position to be tested
-;				a		if a is 0, the access bank is selected.  if a is 1,
-;						the BSR specifies the bank used to select reg.
-; -------------------------------------------------------------------------------
-; This macro tests the specified bit in register reg; if it is set, the 
-; instructions following the case macro are executed.  Otherwise, the next
-; case is tested.  This macro does not change the value of the W register.
-; -------------------------------------------------------------------------------
-caseset		macro	reg,bit,a
-		brnch	_casebypass, _selstack#v(_selstackptr - 1), _casecount
-	target	_case, _selstack#v(_selstackptr - 1), _casecount
-		btfss	reg,bit,a
-		brnch	_case, _selstack#v(_selstackptr - 1), (_casecount + 1)
-	target	_casebypass, _selstack#v(_selstackptr - 1), _casecount
-_casecount ++
-		endm
-
-; -------------------------------------------------------------------------------
 ; DEFAULT (START OF A DEFAULT CASE IN A SELECT STATEMENT)
 ; -------------------------------------------------------------------------------
 ; Syntax:		default

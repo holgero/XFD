@@ -180,30 +180,23 @@ InitUSB
 	return
 
 ServiceUSB
-	select
-		caseset	UIR, UERRIF, ACCESS
-			clrf		UEIR, ACCESS
-			break
-		caseset UIR, SOFIF, ACCESS
-			bcf		UIR, SOFIF, ACCESS
-			break
-		caseset	UIR, IDLEIF, ACCESS
-			bcf		UIR, IDLEIF, ACCESS
-			break
-		caseset UIR, ACTVIF, ACCESS
-			bcf		UIR, ACTVIF, ACCESS
-			bcf		UCON, SUSPND, ACCESS
-			break
-		caseset	UIR, STALLIF, ACCESS
-			bcf		UIR, STALLIF, ACCESS
-			break
-		caseset	UIR, URSTIF, ACCESS
-			call resetUSB
-			break
-		caseset	UIR, TRNIF, ACCESS
-			; a USB transaction is complete
-			goto	processUSBTransaction
-	ends
+	btfsc	UIR, UERRIF, ACCESS
+	clrf		UEIR, ACCESS
+	btfsc	UIR, SOFIF, ACCESS
+	bcf		UIR, SOFIF, ACCESS
+	btfsc	UIR, IDLEIF, ACCESS
+	bcf		UIR, IDLEIF, ACCESS
+	btfss	UIR, ACTVIF, ACCESS
+	goto	serviceUsbActvifNotSet
+	bcf		UIR, ACTVIF, ACCESS
+	bcf		UCON, SUSPND, ACCESS
+serviceUsbActvifNotSet
+	btfsc	UIR, STALLIF, ACCESS
+	bcf		UIR, STALLIF, ACCESS
+	btfsc	UIR, URSTIF, ACCESS
+	goto	resetUSB
+	btfsc	UIR, TRNIF, ACCESS		; no USB transaction complete
+	goto	processUSBTransaction
 	return
 
 resetUSB
