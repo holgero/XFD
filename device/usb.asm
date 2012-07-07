@@ -6,7 +6,6 @@
 ; includes
 #include <p18f2550.inc>
 #include "usb_defs.inc"
-#include "ENGR2210.inc"
 
 ;**************************************************************
 ; exported subroutines
@@ -800,45 +799,43 @@ processInToken
 	return
 
 processOutToken
-	banksel		USB_USTAT
-	movf		USB_USTAT, W, BANKED
-	andlw		0x18		; extract the EP bits
-	select
-		case EP0
-			movf		USB_dev_req, W, BANKED
-			select
-				case SET_REPORT
-					movlw		NO_REQUEST
-					movwf		USB_dev_req, BANKED	; clear device request
-					banksel		BD0OAH
-					movf		BD0OAH, W, BANKED	; put EP0 OUT buffer pointer...
-					movwf		FSR0H, ACCESS
-					movf		BD0OAL, W, BANKED
-					movwf		FSR0L, ACCESS		; ...into FSR0
-				; get five bytes in the buffer and copy to LED_states
-					banksel		LED_states
-					movf		POSTINC0, W	
-					movwf		LED_states, BANKED
-					movf		POSTINC0, W	
-					movwf		LED_states+1, BANKED
-					movf		POSTINC0, W	
-					movwf		LED_states+2, BANKED
-					movf		POSTINC0, W	
-					movwf		LED_states+3, BANKED
-					movf		INDF0, W	
-					movwf		LED_states+4, BANKED
-			ends
-			banksel		BD0OBC
-			movlw		0x08
-			movwf		BD0OBC, BANKED
-			movlw		0x88
-			movwf		BD0OST, BANKED
-			goto		sendAnswerOk
-		case EP1
-			break
-		case EP2
-			break
-	ends
+	banksel	USB_USTAT
+	movf	USB_USTAT, W, BANKED
+	andlw	0x18			; extract the EP bits
+	sublw	EP0
+	btfss	STATUS, Z, ACCESS	; skip if it is EP0
+	return
+	movf	USB_dev_req, W, BANKED
+	sublw	SET_REPORT		; is the request SET_REPORT?
+	btfsc	STATUS,Z,ACCESS		; skip if not
+	call	setReport
+	banksel	BD0OBC
+	movlw	0x08
+	movwf	BD0OBC, BANKED
+	movlw	0x88
+	movwf	BD0OST, BANKED
+	goto	sendAnswerOk
+
+setReport
+	movlw	NO_REQUEST
+	movwf	USB_dev_req, BANKED	; clear device request
+	banksel	BD0OAH
+	movf	BD0OAH, W, BANKED	; put EP0 OUT buffer pointer...
+	movwf	FSR0H, ACCESS
+	movf	BD0OAL, W, BANKED
+	movwf	FSR0L, ACCESS		; ...into FSR0
+	; get five bytes in the buffer and copy to LED_states
+	banksel	LED_states
+	movf	POSTINC0, W	
+	movwf	LED_states, BANKED
+	movf	POSTINC0, W	
+	movwf	LED_states+1, BANKED
+	movf	POSTINC0, W	
+	movwf	LED_states+2, BANKED
+	movf	POSTINC0, W	
+	movwf	LED_states+3, BANKED
+	movf	INDF0, W	
+	movwf	LED_states+4, BANKED
 	return
 
 sendDescriptorRequestAnswer
