@@ -174,6 +174,10 @@ db	'5', 0x00
 db	'0', 0x00
 Descriptor_end
 
+StringOffsetsTable
+db	String0 - Descriptor_begin, String1 - Descriptor_begin
+db	String2 - Descriptor_begin
+
 InitUSB
 	clrf	UIE, ACCESS		; mask all USB interrupts
 	clrf	UIR, ACCESS		; clear all USB interrupt flags
@@ -653,24 +657,19 @@ getConfigurationDescriptor0
 
 getStringDescriptorRequest
 	bcf	USB_error_flags, 0, BANKED
-	movf	USB_buffer_data+wValue, W, BANKED
-	select
-		case 0
-			movlw		low (String0-Descriptor_begin)
-			break
-		case 1
-			movlw		low (String1-Descriptor_begin)
-			break
-		case 2
-			movlw		low (String2-Descriptor_begin)
-			break
-		default
-			bsf		USB_error_flags, 0, BANKED
-	ends
-	btfsc	USB_error_flags, 0, BANKED
+	movf	USB_buffer_data+wValue, W, BANKED	; string no
+	sublw	2
+	btfsc	STATUS,C
+	goto	getValidStringDescriptorRequest
+	bsf	USB_error_flags, 0, BANKED
 	goto	standardRequestsError
+getValidStringDescriptorRequest		; allright string index <= 2
+	movf	USB_buffer_data+wValue, W, BANKED	; string no
+	addlw	low (StringOffsetsTable - Descriptor_begin)
 	movwf	USB_desc_ptr, BANKED
-	call	Descriptor		; get descriptor length
+	call	Descriptor		; retrieve offset of requested string no
+	movwf	USB_desc_ptr, BANKED	; now retrieve the string descriptor itself
+	call	Descriptor		; get string descriptor length
 	movwf	USB_bytes_left, BANKED
 	goto	sendDescriptorRequestAnswer
 
