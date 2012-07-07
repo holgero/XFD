@@ -457,99 +457,91 @@ getStatusRequest
 	goto	standardRequestsError
 
 getDeviceStatusRequest
-	banksel		BD0IAH
-	movf		BD0IAH, W, BANKED
-	movwf		FSR0H, ACCESS
-	movf		BD0IAL, W, BANKED	; get buffer pointer
-	movwf		FSR0L, ACCESS
-	banksel		USB_device_status
+	banksel	BD0IAH
+	movf	BD0IAH, W, BANKED
+	movwf	FSR0H, ACCESS
+	movf	BD0IAL, W, BANKED	; get buffer pointer
+	movwf	FSR0L, ACCESS
+	banksel	USB_device_status
 	; copy device status byte to EP0 buffer
-	movf		USB_device_status, W, BANKED	
+	movf	USB_device_status, W, BANKED	
+	movwf	POSTINC0
+	clrf	INDF0
+	banksel	BD0IBC
+	movlw	0x02
+	movwf	BD0IBC, BANKED		; set byte count to 2
+	goto	sendAnswer
+
+getInterfaceStatusRequest
+	gotoRequestErrorIfNotConfigured
+	movlw	NUM_INTERFACES
+	subwf	USB_buffer_data+wIndex,W,BANKED
+	btfsc	STATUS,C,ACCESS
+	goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
+	banksel	BD0IAH
+	movf	BD0IAH, W, BANKED
+	movwf	FSR0H, ACCESS
+	movf	BD0IAL, W, BANKED	; get buffer pointer
+	movwf	FSR0L, ACCESS
+	clrf	POSTINC0
+	clrf	INDF0
+	movlw	0x02
+	movwf	BD0IBC, BANKED		; set byte count to 2
+	goto	sendAnswer
+
+getEndpointStatusRequest
+	movf		USB_USWSTAT, W, BANKED
+	dispatchRequest	ADDRESS_STATE, getEndpointStatusInAddressStateRequest
+	dispatchRequest	CONFIG_STATE, getEndpointStatusInConfiguredStateRequest
+	goto	standardRequestsError
+
+getEndpointStatusInAddressStateRequest
+	movf	USB_buffer_data+wIndex, W, BANKED	; get EP
+	andlw	0x0F				; strip off direction bit
+	btfss	STATUS,Z,ACCESS			; is it EP0?
+	goto	standardRequestsError		; not zero
+	banksel	BD0IAH
+	movf	BD0IAH, W, BANKED		; put EP0 IN buffer ptr
+	movwf	FSR0H, ACCESS
+	movf	BD0IAL, W, BANKED
+	movwf	FSR0L, ACCESS			; ...into FSR0
+	movlw	0x00
+	btfsc	UEP0, EPSTALL, ACCESS
+	movlw	0x01
+	movwf	POSTINC0
+	clrf	INDF0
+	movlw	0x02
+	movwf	BD0IBC, BANKED			; set byte count to 2
+	goto	sendAnswer
+
+getEndpointStatusInConfiguredStateRequest
+	banksel		BD0IAH
+	movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+	movwf		FSR0H, ACCESS
+	movf		BD0IAL, W, BANKED
+	movwf		FSR0L, ACCESS		; ...into FSR0
+	movlw		high UEP0		; put UEP0 address...
+	movwf		FSR1H, ACCESS
+	movlw		low UEP0
+	movwf		FSR1L, ACCESS		; ...into FSR1
+	banksel		USB_buffer_data+wIndex
+	movf		USB_buffer_data+wIndex, W, BANKED  ; get EP and...
+	andlw		0x0F			; ...strip off direction bit
+	btfsc		PLUSW1, EPOUTEN, ACCESS
+	goto		okToReply
+	btfss		PLUSW1, EPINEN, ACCESS
+	goto		standardRequestsError	; neither EPOUTEN nor EPINEN are set
+okToReply
+	; send back the state of the EPSTALL bit + 0 byte
+	movlw		0x01
+	btfss		PLUSW1, EPSTALL, ACCESS
+	clrw
 	movwf		POSTINC0
 	clrf		INDF0
 	banksel		BD0IBC
 	movlw		0x02
 	movwf		BD0IBC, BANKED		; set byte count to 2
 	goto		sendAnswer
-
-getInterfaceStatusRequest
-	movf		USB_USWSTAT, W, BANKED
-	select
-		case ADDRESS_STATE
-			goto	standardRequestsError
-			break
-		case CONFIG_STATE
-			movlw	NUM_INTERFACES
-			subwf	USB_buffer_data+wIndex,W,BANKED
-			btfsc	STATUS,C,ACCESS
-			goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
-			banksel	BD0IAH
-			movf	BD0IAH, W, BANKED
-			movwf	FSR0H, ACCESS
-			movf	BD0IAL, W, BANKED	; get buffer pointer
-			movwf	FSR0L, ACCESS
-			clrf	POSTINC0
-			clrf	INDF0
-			movlw	0x02
-			movwf	BD0IBC, BANKED		; set byte count to 2
-			goto	sendAnswer
-	ends
-	return
-
-getEndpointStatusRequest
-	movf		USB_USWSTAT, W, BANKED
-	select
-		case ADDRESS_STATE
-			movf	USB_buffer_data+wIndex, W, BANKED ; get EP
-			andlw	0x0F		; strip off direction bit
-			btfss	STATUS,Z,ACCESS		; is it EP0?
-			goto	standardRequestsError	; not zero
-			banksel	BD0IAH
-			movf	BD0IAH, W, BANKED ; put EP0 IN buffer ptr
-			movwf	FSR0H, ACCESS
-			movf	BD0IAL, W, BANKED
-			movwf	FSR0L, ACCESS		; ...into FSR0
-			movlw	0x00
-			btfsc	UEP0, EPSTALL, ACCESS
-			movlw	0x01
-			movwf	POSTINC0
-			clrf	INDF0
-			movlw	0x02
-			movwf	BD0IBC, BANKED	; set byte count to 2
-			goto	sendAnswer
-		case CONFIG_STATE
-			banksel		BD0IAH
-			movf		BD0IAH, W, BANKED ; put EP0 IN buffer pointer...
-			movwf		FSR0H, ACCESS
-			movf		BD0IAL, W, BANKED
-			movwf		FSR0L, ACCESS		; ...into FSR0
-			movlw		high UEP0		; put UEP0 address...
-			movwf		FSR1H, ACCESS
-			movlw		low UEP0
-			movwf		FSR1L, ACCESS			; ...into FSR1
-			banksel		USB_buffer_data+wIndex
-			movf		USB_buffer_data+wIndex, W, BANKED  ; get EP and...
-			andlw		0x0F			; ...strip off direction bit
-
-			btfsc		PLUSW1, EPOUTEN, ACCESS
-			goto		okToReply
-			btfss		PLUSW1, EPINEN, ACCESS
-			; neither EPOUTEN nor EPINEN are set
-			goto		standardRequestsError
-okToReply
-			; send back the state of the EPSTALL bit + 0 byte
-			movlw		0x01
-			btfss		PLUSW1, EPSTALL, ACCESS
-			clrw
-			movwf		POSTINC0
-			clrf		INDF0
-			banksel		BD0IBC
-			movlw		0x02
-			movwf		BD0IBC, BANKED	; set byte count to 2
-			goto		sendAnswer
-		default
-			goto	standardRequestsError
-	ends
 
 setFeatureRequest
 	movf		USB_buffer_data+bmRequestType, W, BANKED
