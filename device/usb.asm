@@ -777,35 +777,26 @@ classSetIdle
 	goto	sendAnswerOk
 
 processInToken
-	banksel		USB_USTAT
-	movf		USB_USTAT, W, BANKED
-	andlw		0x18		; extract the EP bits
-	select
-		case EP0
-			movf		USB_dev_req, W, BANKED
-			select
-				case SET_ADDRESS
-					movf		USB_address_pending, W, BANKED
-					movwf		UADDR, ACCESS
-					select
-						case 0
-							movlw		DEFAULT_STATE
-							movwf		USB_USWSTAT, BANKED
-							break
-						default
-							movlw		ADDRESS_STATE
-							movwf		USB_USWSTAT, BANKED
-					ends
-					break
-				case GET_DESCRIPTOR
-					goto		SendDescriptorPacket
-			ends
-			break
-		case EP1
-			break
-		case EP2
-			break
-	ends
+	banksel	USB_USTAT
+	movf	USB_USTAT, W, BANKED
+	andlw	0x18			; extract the EP bits
+	sublw	EP0
+	btfss	STATUS, Z, ACCESS	; skip if it is EP0
+	return
+	movf	USB_dev_req, W, BANKED
+	sublw	GET_DESCRIPTOR
+	btfsc	STATUS, Z, ACCESS	; skip if not GET_DESCRIPTOR
+	goto	SendDescriptorPacket
+	movf	USB_dev_req, W, BANKED
+	sublw	SET_ADDRESS
+	btfss	STATUS, Z, ACCESS	; skip if it is SET_ADDRESS
+	return				; not SET_ADDRESS: just return
+	movf	USB_address_pending, W, BANKED
+	movwf	UADDR, ACCESS
+	movlw	ADDRESS_STATE
+	btfsc	STATUS, Z, ACCESS	; skip if USB_address_pending was not zero
+	movlw	DEFAULT_STATE		; zero value corresponds to default state
+	movwf	USB_USWSTAT, BANKED
 	return
 
 processOutToken
