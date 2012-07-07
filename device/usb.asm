@@ -603,93 +603,96 @@ continueAnswerConfigState
 	goto	sendAnswerOk
 
 getDescriptorRequest
-	movlw		GET_DESCRIPTOR
-	movwf		USB_dev_req, BANKED			; processing a GET_DESCRIPTOR request
-	movf		USB_buffer_data+(wValue+1), W, BANKED
+	movlw	GET_DESCRIPTOR
+	movwf	USB_dev_req, BANKED	; processing a GET_DESCRIPTOR request
+	movf	USB_buffer_data+(wValue+1), W, BANKED
+	dispatchRequest	DEVICE, getDeviceDescriptorRequest
+	dispatchRequest	CONFIGURATION, getConfigurationDescriptorRequest
+	dispatchRequest	STRING, getStringDescriptorRequest
+	dispatchRequest	HID, getHidDescriptorRequest
+	dispatchRequest	REPORT, getReportDescriptorRequest
+	goto		standardRequestsError
+
+getDeviceDescriptorRequest
+	movlw	low (Device-Descriptor_begin)
+	movwf	USB_desc_ptr, BANKED
+	call	Descriptor		; get descriptor length
+	movwf	USB_bytes_left, BANKED
+	goto	sendDescriptorRequestAnswer
+
+getConfigurationDescriptorRequest
+	bcf	USB_error_flags, 0, BANKED
+	movf	USB_buffer_data+wValue, W, BANKED
+	btfsc	STATUS, Z, ACCESS	; skip if not zero
+	goto	getConfigurationDescriptor0
+	bsf	USB_error_flags, 0, BANKED
+	goto	standardRequestsError
+getConfigurationDescriptor0
+	movlw	low (Configuration1-Descriptor_begin)
+	addlw	0x02			; add offset for wTotalLength
+	movwf	USB_desc_ptr, BANKED
+	call	Descriptor		; get total descriptor length
+	movwf	USB_bytes_left, BANKED
+	movlw	0x02
+	subwf	USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
+	goto 	sendDescriptorRequestAnswer
+
+getStringDescriptorRequest
+	bcf	USB_error_flags, 0, BANKED
+	movf	USB_buffer_data+wValue, W, BANKED
 	select
-		case DEVICE
-			movlw		low (Device-Descriptor_begin)
-			movwf		USB_desc_ptr, BANKED
-			call		Descriptor		; get descriptor length
-			movwf		USB_bytes_left, BANKED
-			goto		sendDescriptorRequestAnswer
-		case CONFIGURATION
-			bcf		USB_error_flags, 0, BANKED
-			movf		USB_buffer_data+wValue, W, BANKED
-			select
-				case 0
-					movlw	low (Configuration1-Descriptor_begin)
-					break
-				default
-					bsf		USB_error_flags, 0, BANKED
-			ends
-			btfsc		USB_error_flags, 0, BANKED
-			goto		standardRequestsError
-			addlw		0x02		; add offset for wTotalLength
-			movwf		USB_desc_ptr, BANKED
-			call		Descriptor	; get total descriptor length
-			movwf		USB_bytes_left, BANKED
-			movlw		0x02
-			subwf		USB_desc_ptr, F, BANKED	; subtract offset for wTotalLength
-			goto 		sendDescriptorRequestAnswer
-		case STRING
-			bcf		USB_error_flags, 0, BANKED
-			movf		USB_buffer_data+wValue, W, BANKED
-			select
-				case 0
-					movlw		low (String0-Descriptor_begin)
-					break
-				case 1
-					movlw		low (String1-Descriptor_begin)
-					break
-				case 2
-					movlw		low (String2-Descriptor_begin)
-					break
-				default
-					bsf		USB_error_flags, 0, BANKED
-			ends
-			btfsc		USB_error_flags, 0, BANKED
-			goto		standardRequestsError
-			movwf		USB_desc_ptr, BANKED
-			call		Descriptor	; get descriptor length
-			movwf		USB_bytes_left, BANKED
-			goto		sendDescriptorRequestAnswer
-		case HID
-			bcf		USB_error_flags, 0, BANKED
-			movf		USB_buffer_data+wValue, W, BANKED
-			select
-				case 0
-					movlw		low (HID1-Descriptor_begin)
-					break
-				default
-					bsf			USB_error_flags, 0, BANKED
-			ends
-			btfsc		USB_error_flags, 0, BANKED
-			goto		standardRequestsError
-			movwf		USB_desc_ptr, BANKED
-			call		Descriptor	; get descriptor length
-			movwf		USB_bytes_left, BANKED
-			goto		sendDescriptorRequestAnswer
-		case REPORT
-			bcf		USB_error_flags, 0, BANKED
-			movf		USB_buffer_data+wValue, W, BANKED
-			select
-				case 0
-					movlw		REPORT_DESCRIPTOR_LENGTH
-					movwf		USB_bytes_left, BANKED	; set descriptor length
-					movlw		low (Report1-Descriptor_begin)
-					break
-				default
-					bsf		USB_error_flags, 0, BANKED
-			ends
-			btfsc		USB_error_flags, 0, BANKED
-			goto		standardRequestsError
-			movwf		USB_desc_ptr, BANKED
-			goto		sendDescriptorRequestAnswer
+		case 0
+			movlw		low (String0-Descriptor_begin)
+			break
+		case 1
+			movlw		low (String1-Descriptor_begin)
+			break
+		case 2
+			movlw		low (String2-Descriptor_begin)
+			break
 		default
-			goto		standardRequestsError
+			bsf		USB_error_flags, 0, BANKED
 	ends
-	return
+	btfsc	USB_error_flags, 0, BANKED
+	goto	standardRequestsError
+	movwf	USB_desc_ptr, BANKED
+	call	Descriptor		; get descriptor length
+	movwf	USB_bytes_left, BANKED
+	goto	sendDescriptorRequestAnswer
+
+getHidDescriptorRequest
+	bcf	USB_error_flags, 0, BANKED
+	movf	USB_buffer_data+wValue, W, BANKED
+	select
+		case 0
+			movlw		low (HID1-Descriptor_begin)
+			break
+		default
+			bsf			USB_error_flags, 0, BANKED
+	ends
+	btfsc	USB_error_flags, 0, BANKED
+	goto	standardRequestsError
+	movwf	USB_desc_ptr, BANKED
+	call	Descriptor		; get descriptor length
+	movwf	USB_bytes_left, BANKED
+	goto	sendDescriptorRequestAnswer
+
+getReportDescriptorRequest
+	bcf	USB_error_flags, 0, BANKED
+	movf	USB_buffer_data+wValue, W, BANKED
+	select
+		case 0
+			movlw		REPORT_DESCRIPTOR_LENGTH
+			movwf		USB_bytes_left, BANKED	; set descriptor length
+			movlw		low (Report1-Descriptor_begin)
+			break
+		default
+			bsf		USB_error_flags, 0, BANKED
+	ends
+	btfsc	USB_error_flags, 0, BANKED
+	goto	standardRequestsError
+	movwf	USB_desc_ptr, BANKED
+	goto	sendDescriptorRequestAnswer
 
 classRequests
 	movf		USB_buffer_data+bRequest, W, BANKED
