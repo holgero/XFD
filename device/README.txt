@@ -29,18 +29,17 @@ Frei:
 27 RB6
 28 RB7
 
-Ergibt 6+5+8= 19 LEDs
-mal 20 mA -> 380 mA Strombedarf
+Benutzt für LEDs:
+21 RB0 rot
+22 RB1 gelb
+23 RB2 grün
+24 RB3 blau
+25 RB4 weiß
 
-
-Erste Stufe: 3 LEDs: Rot Gelb Grün (nicht RGB!)
-
-RB0: Rot, RB1: Gelb, RB2: Grün
-
-Report mit 3 bytes, 1: Rot, 2: Gelb, 3: Grün
+Report mit 5 bytes, 1: Rot, 2: Gelb, 3: Grün, 4: Blau, 5: Weiß
 Verwende jeweils Bit 0 um die entsprechende LED zu schalten.
 
-Nehme PID 0xFF0C (/)
+PID: 0xFF0C
 
 TODO:
 * auf self powered umstellen/2. Konfiguration erstellen
