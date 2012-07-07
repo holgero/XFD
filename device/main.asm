@@ -60,12 +60,6 @@
 ; local definitions
 #define TIMER0H_VAL         0xFE
 #define TIMER0L_VAL         0x20
-
-;**************************************************************
-; local data
-main_udata		UDATA
-COUNTER			RES	1
-
 ;**************************************************************
 ; vectors
 resetvector		ORG	0x0800
@@ -97,12 +91,8 @@ Main
 	movwf		T0CON, ACCESS	; set prescaler for Timer0 for 1:256 scaling
 					;	(Timer0 will go off every ~10 ms )
 		
-	call		InitUSB		; initialize the USB registers and serial interface engine
-
+	call		InitUSB	; initialize the USB registers and serial interface engine
 	call		WaitConfiguredUSB
-
-	banksel		COUNTER
-	clrf		COUNTER, BANKED
 
 mainLoop
 	; service usb requests as long as timer0 runs

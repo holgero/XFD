@@ -5,7 +5,6 @@
 ;**************************************************************
 ; includes
 #include <p18f2550.inc>
-#include "usb_defs.inc"
 
 ;**************************************************************
 ; exported subroutines
@@ -17,6 +16,99 @@
 ; exported variables
 	global	LED_states
 
+;**************************************************************
+; local definitions
+NUM_CONFIGURATIONS	EQU	1
+NUM_INTERFACES		EQU	1
+; usb states
+POWERED_STATE		EQU	0x00
+DEFAULT_STATE		EQU	0x01
+ADDRESS_STATE		EQU	0x02
+CONFIG_STATE		EQU	0x03
+
+; endpoint types
+ENDPT_IN		EQU	0x12
+ENDPT_OUT		EQU	0x14
+ENDPT_CONTROL		EQU	0x16
+
+; tokens
+TOKEN_OUT		EQU	(0x01<<2)
+TOKEN_IN		EQU	(0x09<<2)
+TOKEN_SETUP		EQU	(0x0D<<2)
+
+; usb addresses
+BDOST			EQU	0x0400
+BDOBC			EQU	0x0401
+BDOAL			EQU	0x0402
+BDOAH			EQU	0x0403
+BDIST			EQU	0x0404
+BDIBC			EQU	0x0405
+BDIAL			EQU	0x0406
+BDIAH			EQU	0x0407
+; Register location after last buffer descriptor register
+USB_Buffer		EQU	0x0480
+
+; offsets from the beginning of the Buffer Descriptor
+ADDRESSL		EQU	0x02
+ADDRESSH		EQU	0x03
+
+; descriptor types
+DEVICE			EQU	1
+CONFIGURATION		EQU	2
+STRING			EQU	3
+INTERFACE		EQU	4
+ENDPOINT		EQU	5
+
+; HID descriptor types
+HID			EQU	0x21
+REPORT			EQU	0x22
+PHYSICAL		EQU	0x23
+
+; offsets into the setup data record
+bmRequestType		EQU	0x00
+bRequest		EQU	0x01
+wValue			EQU	0x02
+wIndex			EQU	0x04
+wLength			EQU	0x06
+
+; USB requests
+NO_REQUEST		EQU	0xFF
+GET_STATUS		EQU	0x00
+CLEAR_FEATURE		EQU	0x01
+SET_FEATURE		EQU	0x03
+SET_ADDRESS		EQU	0x05
+GET_DESCRIPTOR		EQU	0x06
+SET_DESCRIPTOR		EQU	0x07
+GET_CONFIGURATION	EQU	0x08
+SET_CONFIGURATION	EQU	0x09
+GET_INTERFACE		EQU	0x0A
+SET_INTERFACE		EQU	0x0B
+
+; HID Class requests
+GET_REPORT		EQU	0x01
+GET_IDLE		EQU	0x02
+GET_PROTOCOL		EQU	0x03
+SET_REPORT		EQU	0x09
+SET_IDLE		EQU	0x0A
+SET_PROTOCOL		EQU	0x0B
+HID_SET_REPORT		EQU	0x21
+
+; endpoints
+EP0			EQU	0x00 << 3
+EP1			EQU	0x01 << 3
+EP2			EQU	0x02 << 3
+
+; request targets
+STANDARD		EQU	0x00 << 5
+CLASS			EQU	0x01 << 5
+VENDOR			EQU	0x02 << 5
+
+RECIPIENT_DEVICE	EQU	0x00
+RECIPIENT_INTERFACE	EQU	0x01
+RECIPIENT_ENDPOINT	EQU	0x02
+
+; request codes
+WAKEUP_REQUEST		EQU	0x01
 ;**************************************************************
 ; local data
 usb_udata		UDATA
@@ -239,21 +331,21 @@ resetUSB
 	clrf		UEP13, ACCESS
 	clrf		UEP14, ACCESS
 	clrf		UEP15, ACCESS
-	banksel		BD0OBC
+	banksel		BDOBC
 	movlw		0x08
-	movwf		BD0OBC, BANKED
+	movwf		BDOBC, BANKED
 	movlw		low USB_Buffer		; EP0 OUT gets a buffer...
-	movwf		BD0OAL, BANKED
+	movwf		BDOAL, BANKED
 	movlw		high USB_Buffer
-	movwf		BD0OAH, BANKED		; ...set up its address
+	movwf		BDOAH, BANKED		; ...set up its address
 	movlw		0x88			; set UOWN bit (USB can write)
-	movwf		BD0OST, BANKED
+	movwf		BDOST, BANKED
 	movlw		low (USB_Buffer+0x08)	; EP0 IN gets a buffer...
-	movwf		BD0IAL, BANKED
+	movwf		BDIAL, BANKED
 	movlw		high (USB_Buffer+0x08)
-	movwf		BD0IAH, BANKED		; ...set up its address
+	movwf		BDIAH, BANKED		; ...set up its address
 	movlw		0x08			; clear UOWN bit (MCU can write)
-	movwf		BD0IST, BANKED
+	movwf		BDIST, BANKED
 	clrf		UADDR, ACCESS		; set USB Address to 0
 	clrf		UIR, ACCESS		; clear all the USB interrupt flags
 	movlw		ENDPT_CONTROL
@@ -274,7 +366,6 @@ dispatchRequest	macro	requestCode, requestLabel
 	goto	requestLabel
 	xorlw	requestCode
 	endm
-	
 
 processUSBTransaction
 	movlw		0x04
@@ -323,10 +414,10 @@ processSetupToken
 	movwf		USB_buffer_data+6, BANKED
 	movf		POSTINC0, W
 	movwf		USB_buffer_data+7, BANKED
-	banksel		BD0OBC
+	banksel		BDOBC
 	movlw		0x08
-	movwf		BD0OBC, BANKED		; reset the byte count
-	movwf		BD0IST, BANKED		; return the in buffer to us (dequeue any pending requests)
+	movwf		BDOBC, BANKED		; reset the byte count
+	movwf		BDIST, BANKED		; return the in buffer to us (dequeue any pending requests)
 	banksel		USB_buffer_data+bmRequestType
 	movf		USB_buffer_data+bmRequestType,W,BANKED
 	sublw		HID_SET_REPORT
@@ -337,8 +428,8 @@ processSetupToken
 setupTokenOtherRequestTypes
 	movlw		0x88
 setupTokenAllRequestTypes
-	banksel		BD0OST
-	movwf		BD0OST, BANKED	; set EP0 OUT UOWN back to USB and DATA0/DATA1 packet according to request type
+	banksel		BDOST
+	movwf		BDOST, BANKED	; set EP0 OUT UOWN back to USB and DATA0/DATA1 packet according to request type
 	bcf		UCON, PKTDIS, ACCESS	; assuming there is nothing to dequeue, clear the packet disable bit
 	banksel		USB_dev_req
 	movlw		NO_REQUEST
@@ -368,11 +459,11 @@ standardRequestsError
 	return
 
 sendAnswerOk
-	banksel		BD0IBC
-	clrf		BD0IBC, BANKED	; set byte count to 0
+	banksel		BDIBC
+	clrf		BDIBC, BANKED	; set byte count to 0
 sendAnswer
 	movlw		0xC8
-	movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
+	movwf		BDIST, BANKED	; send packet as DATA1, set UOWN bit
 	return
 
 gotoRequestErrorIfNotConfigured	macro
@@ -402,14 +493,14 @@ getInterfaceRequest
 	subwf	USB_buffer_data+wIndex,W,BANKED
 	btfsc	STATUS,C,ACCESS
 	goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
-	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED
+	banksel	BDIAH
+	movf	BDIAH, W, BANKED
 	movwf	FSR0H, ACCESS
-	movf	BD0IAL, W, BANKED	; get buffer pointer
+	movf	BDIAL, W, BANKED	; get buffer pointer
 	movwf	FSR0L, ACCESS
 	clrf	INDF0		; always send back 0 for bAlternateSetting
 	movlw	0x01
-	movwf	BD0IBC, BANKED	; set byte count to 1
+	movwf	BDIBC, BANKED	; set byte count to 1
 	goto	sendAnswer
 
 setConfigurationRequest
@@ -430,30 +521,30 @@ setConfiguredState
 	movlw	CONFIG_STATE
 	movwf	USB_USWSTAT, BANKED
 	movlw	0x08
-	banksel	BD1IBC
-	movwf	BD1IBC, BANKED		; set EP1 IN byte count to 8 
+	banksel	BDIBC+0x08
+	movwf	BDIBC+0x08, BANKED	; set EP1 IN byte count to 8 
 	movlw	low (USB_Buffer+0x10)
-	movwf	BD1IAL, BANKED		; set EP1 IN buffer address
+	movwf	BDIAL+0x08, BANKED	; set EP1 IN buffer address
 	movlw	high (USB_Buffer+0x10)
-	movwf	BD1IAH, BANKED
+	movwf	BDIAH+0x08, BANKED
 	movlw	0x48
-	movwf	BD1IST, BANKED		; clear UOWN bit (PIC can write EP1 IN buffer)
-	movlw	ENDPT_IN_ONLY
+	movwf	BDIST+0x08, BANKED	; clear UOWN bit (PIC can write EP1 IN buffer)
+	movlw	ENDPT_IN
 	movwf	UEP1, ACCESS		; enable EP1 for interrupt in transfers
 	goto	sendAnswerOk
 
 getConfigurationRequest
-	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED
+	banksel	BDIAH
+	movf	BDIAH, W, BANKED
 	movwf	FSR0H, ACCESS
-	movf	BD0IAL, W, BANKED
+	movf	BDIAL, W, BANKED
 	movwf	FSR0L, ACCESS
 	banksel	USB_curr_config
 	movf	USB_curr_config, W, BANKED
 	movwf	INDF0			; copy current device configuration to EP0 IN buffer
-	banksel	BD0IBC
+	banksel	BDIBC
 	movlw	0x01
-	movwf	BD0IBC, BANKED		; set EP0 IN byte count to 1
+	movwf	BDIBC, BANKED		; set EP0 IN byte count to 1
 	goto	sendAnswer
 
 setAddressRequest
@@ -474,19 +565,19 @@ getStatusRequest
 	goto	standardRequestsError
 
 getDeviceStatusRequest
-	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED
+	banksel	BDIAH
+	movf	BDIAH, W, BANKED
 	movwf	FSR0H, ACCESS
-	movf	BD0IAL, W, BANKED	; get buffer pointer
+	movf	BDIAL, W, BANKED	; get buffer pointer
 	movwf	FSR0L, ACCESS
 	banksel	USB_device_status
 	; copy device status byte to EP0 buffer
 	movf	USB_device_status, W, BANKED	
 	movwf	POSTINC0
 	clrf	INDF0
-	banksel	BD0IBC
+	banksel	BDIBC
 	movlw	0x02
-	movwf	BD0IBC, BANKED		; set byte count to 2
+	movwf	BDIBC, BANKED		; set byte count to 2
 	goto	sendAnswer
 
 getInterfaceStatusRequest
@@ -495,15 +586,15 @@ getInterfaceStatusRequest
 	subwf	USB_buffer_data+wIndex,W,BANKED
 	btfsc	STATUS,C,ACCESS
 	goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
-	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED
+	banksel	BDIAH
+	movf	BDIAH, W, BANKED
 	movwf	FSR0H, ACCESS
-	movf	BD0IAL, W, BANKED	; get buffer pointer
+	movf	BDIAL, W, BANKED	; get buffer pointer
 	movwf	FSR0L, ACCESS
 	clrf	POSTINC0
 	clrf	INDF0
 	movlw	0x02
-	movwf	BD0IBC, BANKED		; set byte count to 2
+	movwf	BDIBC, BANKED		; set byte count to 2
 	goto	sendAnswer
 
 getEndpointStatusRequest
@@ -517,10 +608,10 @@ getEndpointStatusInAddressStateRequest
 	andlw	0x0F			; strip off direction bit
 	btfss	STATUS,Z,ACCESS		; is it EP0?
 	goto	standardRequestsError	; not zero
-	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED	; put EP0 IN buffer ptr
+	banksel	BDIAH
+	movf	BDIAH, W, BANKED	; put EP0 IN buffer ptr
 	movwf	FSR0H, ACCESS
-	movf	BD0IAL, W, BANKED
+	movf	BDIAL, W, BANKED
 	movwf	FSR0L, ACCESS		; ...into FSR0
 	movlw	0x00
 	btfsc	UEP0, EPSTALL, ACCESS
@@ -528,14 +619,14 @@ getEndpointStatusInAddressStateRequest
 	movwf	POSTINC0
 	clrf	INDF0
 	movlw	0x02
-	movwf	BD0IBC, BANKED		; set byte count to 2
+	movwf	BDIBC, BANKED		; set byte count to 2
 	goto	sendAnswer
 
 getEndpointStatusInConfiguredStateRequest
-	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+	banksel	BDIAH
+	movf	BDIAH, W, BANKED	; put EP0 IN buffer pointer...
 	movwf	FSR0H, ACCESS
-	movf	BD0IAL, W, BANKED
+	movf	BDIAL, W, BANKED
 	movwf	FSR0L, ACCESS		; ...into FSR0
 	movlw	high UEP0		; put UEP0 address...
 	movwf	FSR1H, ACCESS
@@ -555,9 +646,9 @@ okToReply
 	clrw
 	movwf	POSTINC0
 	clrf	INDF0
-	banksel	BD0IBC
+	banksel	BDIBC
 	movlw	0x02
-	movwf	BD0IBC, BANKED		; set byte count to 2
+	movwf	BDIBC, BANKED		; set byte count to 2
 	goto	sendAnswer
 
 setFeatureRequest
@@ -569,7 +660,7 @@ setFeatureRequest
 
 setDeviceFeatureRequest
 	movf	USB_buffer_data+wValue, W, BANKED
-	sublw	DEVICE_REMOTE_WAKEUP
+	sublw	WAKEUP_REQUEST
 	btfss	STATUS, Z, ACCESS	; skip if request is wakeup
 	goto	standardRequestsError	; dunno what to do with this request
 	bcf	USB_device_status, 1, BANKED
@@ -711,10 +802,10 @@ classRequests
 	goto	standardRequestsError
 
 classGetReport				; report current LED_state
-	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+	banksel	BDIAH
+	movf	BDIAH, W, BANKED	; put EP0 IN buffer pointer...
 	movwf	FSR0H, ACCESS
-	movf	BD0IAL, W, BANKED
+	movf	BDIAL, W, BANKED
 	movwf	FSR0L, ACCESS		; ...into FSR0
 	banksel LED_states
 	movf	LED_states, W, BANKED	; red led
@@ -727,9 +818,9 @@ classGetReport				; report current LED_state
 	movwf	POSTINC0
 	movf	LED_states+4, W, BANKED	; white led
 	movwf	INDF0			; ...to EP0 IN buffer
-	banksel	BD0IBC
+	banksel	BDIBC
 	movlw	0x05
-	movwf	BD0IBC, BANKED		; set EP0 IN buffer byte count
+	movwf	BDIBC, BANKED		; set EP0 IN buffer byte count
 	goto	sendAnswer
 
 classSetReport
@@ -738,17 +829,17 @@ classSetReport
 	return
 
 classGetProtocol
-	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+	banksel	BDIAH
+	movf	BDIAH, W, BANKED	; put EP0 IN buffer pointer...
 	movwf	FSR0H, ACCESS
-	movf	BD0IAL, W, BANKED
+	movf	BDIAL, W, BANKED
 	movwf	FSR0L, ACCESS		; ...into FSR0
 	banksel	USB_protocol
 	movf	USB_protocol, W, BANKED
 	movwf	INDF0
-	banksel	BD0IBC
+	banksel	BDIBC
 	movlw	0x01
-	movwf	BD0IBC, BANKED		; set byte count to 1
+	movwf	BDIBC, BANKED		; set byte count to 1
 	goto	sendAnswer
 
 classSetProtocol
@@ -757,17 +848,17 @@ classSetProtocol
 	goto	sendAnswerOk
 
 classGetIdle
-	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+	banksel	BDIAH
+	movf	BDIAH, W, BANKED	; put EP0 IN buffer pointer...
 	movwf	FSR0H, ACCESS
-	movf	BD0IAL, W, BANKED
+	movf	BDIAL, W, BANKED
 	movwf	FSR0L, ACCESS		; ...into FSR0
 	banksel	USB_idle_rate
 	movf	USB_idle_rate, W, BANKED
 	movwf	INDF0
-	banksel	BD0IBC
+	banksel	BDIBC
 	movlw	0x01
-	movwf	BD0IBC, BANKED		; set byte count to 1
+	movwf	BDIBC, BANKED		; set byte count to 1
 	goto	sendAnswer
 
 classSetIdle
@@ -809,20 +900,20 @@ processOutToken
 	sublw	SET_REPORT		; is the request SET_REPORT?
 	btfsc	STATUS,Z,ACCESS		; skip if not
 	call	setReport
-	banksel	BD0OBC
+	banksel	BDOBC
 	movlw	0x08
-	movwf	BD0OBC, BANKED
+	movwf	BDOBC, BANKED
 	movlw	0x88
-	movwf	BD0OST, BANKED
+	movwf	BDOST, BANKED
 	goto	sendAnswerOk
 
 setReport
 	movlw	NO_REQUEST
 	movwf	USB_dev_req, BANKED	; clear device request
-	banksel	BD0OAH
-	movf	BD0OAH, W, BANKED	; put EP0 OUT buffer pointer...
+	banksel	BDOAH
+	movf	BDOAH, W, BANKED	; put EP0 OUT buffer pointer...
 	movwf	FSR0H, ACCESS
-	movf	BD0OAL, W, BANKED
+	movf	BDOAL, W, BANKED
 	movwf	FSR0L, ACCESS		; ...into FSR0
 	; get five bytes in the buffer and copy to LED_states
 	banksel	LED_states
@@ -839,67 +930,66 @@ setReport
 	return
 
 sendDescriptorRequestAnswer
-	movf		USB_buffer_data+(wLength+1),W,BANKED
-	btfss		STATUS,Z,ACCESS		; skip if zero
-	goto		SendDescriptorPacket
-	movf		USB_bytes_left,W,BANKED
-	subwf		USB_buffer_data+wLength,W,BANKED
-	btfsc		STATUS,C,ACCESS	
-	goto		SendDescriptorPacket	; USB_buffer_data+wLength >= USB_bytes_left
-	movf		USB_buffer_data+wLength, W, BANKED
-	movwf		USB_bytes_left, BANKED
+	movf	USB_buffer_data+(wLength+1),W,BANKED
+	btfss	STATUS,Z,ACCESS		; skip if zero
+	goto	SendDescriptorPacket
+	movf	USB_bytes_left,W,BANKED
+	subwf	USB_buffer_data+wLength,W,BANKED
+	btfsc	STATUS,C,ACCESS	
+	goto	SendDescriptorPacket	; USB_buffer_data+wLength >= USB_bytes_left
+	movf	USB_buffer_data+wLength, W, BANKED
+	movwf	USB_bytes_left, BANKED
 
 SendDescriptorPacket
-	banksel		USB_bytes_left
+	banksel	USB_bytes_left
 	
-	movlw		0x08
-	subwf		USB_bytes_left,W,BANKED
-	btfsc		STATUS,C,ACCESS
-	goto		longDescriptor		; bytes_left > 8
+	movlw	0x08
+	subwf	USB_bytes_left,W,BANKED
+	btfsc	STATUS,C,ACCESS
+	goto	longDescriptor		; bytes_left > 8
 
-	movlw		NO_REQUEST
-	movwf		USB_dev_req, BANKED	; sending a short packet, so clear device request
-	movf		USB_bytes_left, W, BANKED
-	goto		shortDescriptor
+	movlw	NO_REQUEST
+	movwf	USB_dev_req, BANKED	; sending a short packet, so clear device request
+	movf	USB_bytes_left, W, BANKED
+	goto	shortDescriptor
 
 longDescriptor
-	movlw		0x08
+	movlw	0x08
 
 shortDescriptor
 	; bytes to send now in W
-	subwf		USB_bytes_left, F, BANKED
-	movwf		USB_packet_length, BANKED
-	banksel		BD0IBC
-	movwf		BD0IBC, BANKED			; set EP0 IN byte count with packet size
-	movf		BD0IAH, W, BANKED		; put EP0 IN buffer pointer...
-	movwf		FSR0H, ACCESS
-	movf		BD0IAL, W, BANKED
-	movwf		FSR0L, ACCESS			; ...into FSR0
-	banksel		USB_loop_index
+	subwf	USB_bytes_left, F, BANKED
+	movwf	USB_packet_length, BANKED
+	banksel	BDIBC
+	movwf	BDIBC, BANKED			; set EP0 IN byte count with packet size
+	movf	BDIAH, W, BANKED		; put EP0 IN buffer pointer...
+	movwf	FSR0H, ACCESS
+	movf	BDIAL, W, BANKED
+	movwf	FSR0L, ACCESS			; ...into FSR0
+	banksel	USB_loop_index
 
-	movlw		1
-	movwf		USB_loop_index,BANKED
+	movlw	1
+	movwf	USB_loop_index,BANKED
 
 sendNextDescriptorByte
-	movf		USB_loop_index,W,BANKED
-	subwf		USB_packet_length,W,BANKED
-	btfss		STATUS,C,ACCESS
-	goto		descriptorSent
+	movf	USB_loop_index,W,BANKED
+	subwf	USB_packet_length,W,BANKED
+	btfss	STATUS,C,ACCESS
+	goto	descriptorSent
 
-	call		Descriptor		; get next byte of descriptor being sent
-	movwf		POSTINC0		; copy to EP0 IN buffer, and increment FSR0
-	incf		USB_desc_ptr, F, BANKED	; increment the descriptor pointer
-
-	incf		USB_loop_index,F,BANKED
-	goto		sendNextDescriptorByte
+	call	Descriptor		; get next byte of descriptor being sent
+	movwf	POSTINC0		; copy to EP0 IN buffer, and increment FSR0
+	incf	USB_desc_ptr, F, BANKED	; increment the descriptor pointer
+	incf	USB_loop_index,F,BANKED
+	goto	sendNextDescriptorByte
 
 descriptorSent
-	banksel		BD0IST
-	movlw		0x40
-	xorwf		BD0IST, W, BANKED	; toggle the DATA01 bit
-	andlw		0x40			; clear the PIDs bits
-	iorlw		0x88			; set UOWN and DTS bits
-	movwf		BD0IST, BANKED
+	banksel	BDIST
+	movlw	0x40
+	xorwf	BDIST, W, BANKED	; toggle the DATA01 bit
+	andlw	0x40			; clear the PIDs bits
+	iorlw	0x88			; set UOWN and DTS bits
+	movwf	BDIST, BANKED
 	return
 
 WaitConfiguredUSB
@@ -910,12 +1000,12 @@ WaitConfiguredUSB
 	btfss	STATUS,Z,ACCESS
 	goto	WaitConfiguredUSB	; ...until the host configures the peripheral
 
-	banksel		LED_states
-	clrf		LED_states, BANKED
-	clrf		LED_states+1, BANKED
-	clrf		LED_states+2, BANKED
-	clrf		LED_states+3, BANKED
-	clrf		LED_states+4, BANKED
+	banksel	LED_states
+	clrf	LED_states, BANKED
+	clrf	LED_states+1, BANKED
+	clrf	LED_states+2, BANKED
+	clrf	LED_states+3, BANKED
+	clrf	LED_states+4, BANKED
 	return
 
 			END
