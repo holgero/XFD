@@ -426,31 +426,31 @@ setConfiguredState
 	goto	sendAnswerOk
 
 getConfigurationRequest
-	banksel		BD0IAH
-	movf		BD0IAH, W, BANKED
-	movwf		FSR0H, ACCESS
-	movf		BD0IAL, W, BANKED
-	movwf		FSR0L, ACCESS
-	banksel		USB_curr_config
-	movf		USB_curr_config, W, BANKED
-	movwf		INDF0			; copy current device configuration to EP0 IN buffer
-	banksel		BD0IBC
-	movlw		0x01
-	movwf		BD0IBC, BANKED		; set EP0 IN byte count to 1
-	goto		sendAnswer
+	banksel	BD0IAH
+	movf	BD0IAH, W, BANKED
+	movwf	FSR0H, ACCESS
+	movf	BD0IAL, W, BANKED
+	movwf	FSR0L, ACCESS
+	banksel	USB_curr_config
+	movf	USB_curr_config, W, BANKED
+	movwf	INDF0			; copy current device configuration to EP0 IN buffer
+	banksel	BD0IBC
+	movlw	0x01
+	movwf	BD0IBC, BANKED		; set EP0 IN byte count to 1
+	goto	sendAnswer
 
 setAddressRequest
 	btfsc	USB_buffer_data+wValue, 7, BANKED 
-	goto	standardRequestsError		; new device address illegal
+	goto	standardRequestsError	; new device address illegal
 	movlw	SET_ADDRESS
-	movwf	USB_dev_req, BANKED		; processing a SET_ADDRESS request
+	movwf	USB_dev_req, BANKED	; processing a SET_ADDRESS request
 	movf	USB_buffer_data+wValue, W, BANKED
 	movwf	USB_address_pending, BANKED	; save new address
 	goto	sendAnswerOk
 
 getStatusRequest
 	movf	USB_buffer_data+bmRequestType, W, BANKED
-	andlw	0x1F				; extract request recipient bits
+	andlw	0x1F			; extract request recipient bits
 	dispatchRequest	RECIPIENT_DEVICE, getDeviceStatusRequest
 	dispatchRequest	RECIPIENT_INTERFACE, getInterfaceStatusRequest
 	dispatchRequest RECIPIENT_ENDPOINT, getEndpointStatusRequest
@@ -490,122 +490,117 @@ getInterfaceStatusRequest
 	goto	sendAnswer
 
 getEndpointStatusRequest
-	movf		USB_USWSTAT, W, BANKED
+	movf	USB_USWSTAT, W, BANKED
 	dispatchRequest	ADDRESS_STATE, getEndpointStatusInAddressStateRequest
 	dispatchRequest	CONFIG_STATE, getEndpointStatusInConfiguredStateRequest
 	goto	standardRequestsError
 
 getEndpointStatusInAddressStateRequest
 	movf	USB_buffer_data+wIndex, W, BANKED	; get EP
-	andlw	0x0F				; strip off direction bit
-	btfss	STATUS,Z,ACCESS			; is it EP0?
-	goto	standardRequestsError		; not zero
+	andlw	0x0F			; strip off direction bit
+	btfss	STATUS,Z,ACCESS		; is it EP0?
+	goto	standardRequestsError	; not zero
 	banksel	BD0IAH
-	movf	BD0IAH, W, BANKED		; put EP0 IN buffer ptr
+	movf	BD0IAH, W, BANKED	; put EP0 IN buffer ptr
 	movwf	FSR0H, ACCESS
 	movf	BD0IAL, W, BANKED
-	movwf	FSR0L, ACCESS			; ...into FSR0
+	movwf	FSR0L, ACCESS		; ...into FSR0
 	movlw	0x00
 	btfsc	UEP0, EPSTALL, ACCESS
 	movlw	0x01
 	movwf	POSTINC0
 	clrf	INDF0
 	movlw	0x02
-	movwf	BD0IBC, BANKED			; set byte count to 2
+	movwf	BD0IBC, BANKED		; set byte count to 2
 	goto	sendAnswer
 
 getEndpointStatusInConfiguredStateRequest
-	banksel		BD0IAH
-	movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
-	movwf		FSR0H, ACCESS
-	movf		BD0IAL, W, BANKED
-	movwf		FSR0L, ACCESS		; ...into FSR0
-	movlw		high UEP0		; put UEP0 address...
-	movwf		FSR1H, ACCESS
-	movlw		low UEP0
-	movwf		FSR1L, ACCESS		; ...into FSR1
-	banksel		USB_buffer_data+wIndex
-	movf		USB_buffer_data+wIndex, W, BANKED  ; get EP and...
-	andlw		0x0F			; ...strip off direction bit
-	btfsc		PLUSW1, EPOUTEN, ACCESS
-	goto		okToReply
-	btfss		PLUSW1, EPINEN, ACCESS
-	goto		standardRequestsError	; neither EPOUTEN nor EPINEN are set
+	banksel	BD0IAH
+	movf	BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+	movwf	FSR0H, ACCESS
+	movf	BD0IAL, W, BANKED
+	movwf	FSR0L, ACCESS		; ...into FSR0
+	movlw	high UEP0		; put UEP0 address...
+	movwf	FSR1H, ACCESS
+	movlw	low UEP0
+	movwf	FSR1L, ACCESS		; ...into FSR1
+	banksel	USB_buffer_data+wIndex
+	movf	USB_buffer_data+wIndex, W, BANKED  ; get EP and...
+	andlw	0x0F			; ...strip off direction bit
+	btfsc	PLUSW1, EPOUTEN, ACCESS
+	goto	okToReply
+	btfss	PLUSW1, EPINEN, ACCESS
+	goto	standardRequestsError	; neither EPOUTEN nor EPINEN are set
 okToReply
 	; send back the state of the EPSTALL bit + 0 byte
-	movlw		0x01
-	btfss		PLUSW1, EPSTALL, ACCESS
+	movlw	0x01
+	btfss	PLUSW1, EPSTALL, ACCESS
 	clrw
-	movwf		POSTINC0
-	clrf		INDF0
-	banksel		BD0IBC
-	movlw		0x02
-	movwf		BD0IBC, BANKED		; set byte count to 2
-	goto		sendAnswer
+	movwf	POSTINC0
+	clrf	INDF0
+	banksel	BD0IBC
+	movlw	0x02
+	movwf	BD0IBC, BANKED		; set byte count to 2
+	goto	sendAnswer
 
 setFeatureRequest
-	movf		USB_buffer_data+bmRequestType, W, BANKED
-	andlw		0x1F			; extract request recipient bits
-	select
-		case RECIPIENT_DEVICE
-			movf		USB_buffer_data+wValue, W, BANKED
-			select
-				case DEVICE_REMOTE_WAKEUP
-					bcf	USB_device_status, 1, BANKED
-					movf	USB_buffer_data+bRequest, W, BANKED
-					sublw	CLEAR_FEATURE
-					btfss	STATUS, Z	; skip if == CLEAR_FEATURE
-					bsf	USB_buffer_data+bRequest, W, BANKED
-					goto	sendAnswerOk
-				default
-					goto	standardRequestsError
-			ends
-			break
-		case RECIPIENT_ENDPOINT
-			movf		USB_USWSTAT, W, BANKED
-			select
-				case ADDRESS_STATE
-					movf	USB_buffer_data+wIndex, W, BANKED ; get EP
-					andlw	0x0F	; strip off direction bit
-					btfss	STATUS,Z,ACCESS		; is it EP0?
-					goto	standardRequestsError	; not zero
-					bcf	UEP0, EPSTALL, ACCESS
-					movf	USB_buffer_data+bRequest, W, BANKED
-					sublw	CLEAR_FEATURE
-					btfss	STATUS, Z	; skip if == CLEAR_FEATURE
-					bsf	UEP0, EPSTALL, ACCESS
-					goto	sendAnswerOk
-				case CONFIG_STATE
-					movlw		high UEP0		; put UEP0 address...
-					movwf		FSR0H, ACCESS
-					movlw		low UEP0
-					movwf		FSR0L, ACCESS		; ...into FSR0
-					movf		USB_buffer_data+wIndex, W, BANKED	; get EP
-					andlw		0x0F			; strip off direction bit
-					addwf		FSR0L, F, ACCESS	; add EP number to FSR0
-					btfsc		STATUS, C, ACCESS
-					incf		FSR0H, F, ACCESS
-					btfsc		INDF0, EPOUTEN, ACCESS
-					goto		continueAnswerConfigState
-					btfss		INDF0, EPINEN, ACCESS
-					; neither EPOUTEN nor EPINEN are set: error
-					goto		standardRequestsError
-continueAnswerConfigState
-					bcf	INDF0, EPSTALL, ACCESS
-					movf	USB_buffer_data+bRequest, W, BANKED
-					sublw	CLEAR_FEATURE
-					btfss	STATUS, Z	; skip if == CLEAR_FEATURE
-					bsf	INDF0, EPSTALL, ACCESS
+	movf	USB_buffer_data+bmRequestType, W, BANKED
+	andlw	0x1F				; extract request recipient bits
+	dispatchRequest	RECIPIENT_DEVICE, setDeviceFeatureRequest
+	dispatchRequest	RECIPIENT_ENDPOINT, setEndpointFeatureRequest
+	goto	standardRequestsError
 
-					goto	sendAnswerOk
-				default
-					goto	standardRequestsError
-			ends
-			break
-		default
-			goto	standardRequestsError
-	ends
-	return
+setDeviceFeatureRequest
+	movf	USB_buffer_data+wValue, W, BANKED
+	sublw	DEVICE_REMOTE_WAKEUP
+	btfss	STATUS, Z, ACCESS	; skip if request is wakeup
+	goto	standardRequestsError	; dunno what to do with this request
+	bcf	USB_device_status, 1, BANKED
+	movf	USB_buffer_data+bRequest, W, BANKED
+	sublw	CLEAR_FEATURE
+	btfss	STATUS, Z		; skip if == CLEAR_FEATURE
+	bsf	USB_device_status, 1, BANKED
+	goto	sendAnswerOk
+
+setEndpointFeatureRequest
+	movf		USB_USWSTAT, W, BANKED
+	dispatchRequest	ADDRESS_STATE, setEndpointFeatureInAddressStateRequest
+	dispatchRequest	CONFIG_STATE, setEndpointFeatureInConfiguredStateRequest
+	goto	standardRequestsError
+
+setEndpointFeatureInAddressStateRequest
+	movf	USB_buffer_data+wIndex, W, BANKED ; get EP
+	andlw	0x0F			; strip off direction bit
+	btfss	STATUS,Z,ACCESS		; is it EP0?
+	goto	standardRequestsError	; not zero
+	bcf	UEP0, EPSTALL, ACCESS
+	movf	USB_buffer_data+bRequest, W, BANKED
+	sublw	CLEAR_FEATURE
+	btfss	STATUS, Z		; skip if == CLEAR_FEATURE
+	bsf	UEP0, EPSTALL, ACCESS
+	goto	sendAnswerOk
+
+setEndpointFeatureInConfiguredStateRequest
+	movlw	high UEP0		; put UEP0 address...
+	movwf	FSR0H, ACCESS
+	movlw	low UEP0
+	movwf	FSR0L, ACCESS		; ...into FSR0
+	movf	USB_buffer_data+wIndex, W, BANKED	; get EP
+	andlw	0x0F			; strip off direction bit
+	addwf	FSR0L, F, ACCESS	; add EP number to FSR0
+	btfsc	STATUS, C, ACCESS
+	incf	FSR0H, F, ACCESS
+	btfsc	INDF0, EPOUTEN, ACCESS
+	goto	continueAnswerConfigState
+	btfss	INDF0, EPINEN, ACCESS
+	goto	standardRequestsError	; neither EPOUTEN nor EPINEN are set: error
+continueAnswerConfigState
+	bcf	INDF0, EPSTALL, ACCESS
+	movf	USB_buffer_data+bRequest, W, BANKED
+	sublw	CLEAR_FEATURE
+	btfss	STATUS, Z		; skip if == CLEAR_FEATURE
+	bsf	INDF0, EPSTALL, ACCESS
+	goto	sendAnswerOk
 
 getDescriptorRequest
 	movlw		GET_DESCRIPTOR
