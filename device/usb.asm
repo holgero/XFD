@@ -318,11 +318,15 @@ processSetupToken
 	movwf		BD0OBC, BANKED		; reset the byte count
 	movwf		BD0IST, BANKED		; return the in buffer to us (dequeue any pending requests)
 	banksel		USB_buffer_data+bmRequestType
-	ifl	USB_buffer_data+bmRequestType, 0x21
-		movlw		0xC8
-	otherwise
-		movlw		0x88
-	endi
+	movf		USB_buffer_data+bmRequestType,W,BANKED
+	sublw		HID_SET_REPORT
+	btfss		STATUS,Z,ACCESS		; skip if request type is HID_SET_REPORT
+	goto		setupTokenOtherRequestTypes
+	movlw		0xC8
+	goto		setupTokenAllRequestTypes
+setupTokenOtherRequestTypes
+	movlw		0x88
+setupTokenAllRequestTypes
 	banksel		BD0OST
 	movwf		BD0OST, BANKED	; set EP0 OUT UOWN back to USB and DATA0/DATA1 packet according to request type
 	bcf		UCON, PKTDIS, ACCESS	; assuming there is nothing to dequeue, clear the packet disable bit
@@ -568,11 +572,11 @@ setFeatureRequest
 			movf		USB_buffer_data+wValue, W, BANKED
 			select
 				case DEVICE_REMOTE_WAKEUP
-					ifl USB_buffer_data+bRequest, CLEAR_FEATURE
-						bcf		USB_device_status, 1, BANKED
-					otherwise
-						bsf		USB_device_status, 1, BANKED
-					endi
+					bcf	USB_device_status, 1, BANKED
+					movf	USB_buffer_data+bRequest, W, BANKED
+					sublw	CLEAR_FEATURE
+					btfss	STATUS, Z	; skip if == CLEAR_FEATURE
+					bsf	USB_buffer_data+bRequest, W, BANKED
 					goto	sendZeroByteAnswer
 				default
 					goto	standardRequestsError
@@ -582,14 +586,14 @@ setFeatureRequest
 			movf		USB_USWSTAT, W, BANKED
 			select
 				case ADDRESS_STATE
-					movf		USB_buffer_data+wIndex, W, BANKED	; get EP
-					andlw		0x0F			; strip off direction bit
-					ifset STATUS, Z, ACCESS			; see if it is EP0
-						ifl USB_buffer_data+bRequest, CLEAR_FEATURE
-							bcf		UEP0, EPSTALL, ACCESS
-						otherwise
-							bsf		UEP0, EPSTALL, ACCESS
-						endi
+					movf	USB_buffer_data+wIndex, W, BANKED ; get EP
+					andlw	0x0F	; strip off direction bit
+					ifset STATUS, Z, ACCESS		; see if it is EP0
+						bcf	UEP0, EPSTALL, ACCESS
+						movf	USB_buffer_data+bRequest, W, BANKED
+						sublw	CLEAR_FEATURE
+						btfss	STATUS, Z ;skip if == CLEAR_FEATURE
+						bsf	UEP0, EPSTALL, ACCESS
 						goto	sendZeroByteAnswer
 					otherwise
 						goto	standardRequestsError
@@ -612,11 +616,12 @@ setFeatureRequest
 					; neither EPOUTEN nor EPINEN are set: error
 					goto		standardRequestsError
 continueAnswerConfigState
-					ifl USB_buffer_data+bRequest, CLEAR_FEATURE
-						bcf		INDF0, EPSTALL, ACCESS
-					otherwise
-						bsf		INDF0, EPSTALL, ACCESS
-					endi
+					bcf	INDF0, EPSTALL, ACCESS
+					movf	USB_buffer_data+bRequest, W, BANKED
+					sublw	CLEAR_FEATURE
+					btfss	STATUS, Z	; skip if == CLEAR_FEATURE
+					bsf	INDF0, EPSTALL, ACCESS
+
 					goto	sendZeroByteAnswer
 				default
 					goto	standardRequestsError

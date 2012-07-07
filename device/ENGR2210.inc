@@ -261,40 +261,6 @@ _casecount ++
 			variable	_ifclausecount = 0
 
 ; -------------------------------------------------------------------------------
-; IFL (START OF AN IF CLAUSE IN AN IF STATEMENT)
-; -------------------------------------------------------------------------------
-; Syntax:		ifl var, relop, lit
-; -------------------------------------------------------------------------------
-; Arguments:	var		the register to be tested against a literal
-;				relop	the relational operator to use for the test, which 
-;							must be one of ==, !=, <, <=, >, >=
-;				lit		the literal to test the contents of register var against
-; -------------------------------------------------------------------------------
-; This macro performs a comparison between the contents of register var and a
-; literal.  If the specified relation holds, the block of statements following
-; the ifl are executed.  This macro makes use of the W register.
-; -------------------------------------------------------------------------------
-; This macro borrows heavily from Myke Predko's structured programming macros,
-; which are described on pp. 542-546 of the second edition of Programming and 
-; Customizing PICmicro Microcontrollers.
-; -------------------------------------------------------------------------------
-ifl			macro		var,lit
-
-			vrbl	_ifclausestack, _ifstackptr, _ifclausecount
-			vrbl	_ifstack, _ifstackptr, _ifcount
-
-_ifstackptr ++
-_ifclausecount = 0
-	target	_if, _ifstack#v(_ifstackptr - 1), _ifclausecount
-			movf	var,W,BANKED
-			sublw	lit
-			btfss	STATUS,Z,ACCESS
-		brnch	_if, _ifstack#v(_ifstackptr - 1), (_ifclausecount + 1)
-_ifcount ++
-_ifclausecount ++
-			endm
-
-; -------------------------------------------------------------------------------
 ; IFSET (START OF AN IF CLAUSE IN AN IF STATEMENT)
 ; -------------------------------------------------------------------------------
 ; Syntax:		ifset reg, bit, a
