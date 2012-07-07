@@ -82,11 +82,11 @@ void USBLeds::setLED(LED newLED) {
 LED USBLeds::getLED() {
     char buffer[5];
     receive(buffer, sizeof(buffer));
-    bool red = buffer[0] == 1;
-    bool yellow = buffer[1] == 1;
-    bool green = buffer[2] == 1;
-    bool blue = buffer[3] == 1;
-    bool white = buffer[4] == 1;
+    bool red = (0x01 & buffer[0]) == 1;
+    bool yellow = (0x01 & buffer[1]) == 1;
+    bool green = (0x01 & buffer[2]) == 1;
+    bool blue = (0x01 & buffer[3]) == 1;
+    bool white = (0x01 & buffer[4]) == 1;
     return LED(red, yellow, green, blue, white);
 }
 

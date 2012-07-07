@@ -360,49 +360,43 @@ sendAnswer
 	movlw		0xC8
 	movwf		BD0IST, BANKED	; send packet as DATA1, set UOWN bit
 	return
+
+gotoRequestErrorIfNotConfigured	macro
+	movf	USB_USWSTAT, W, BANKED
+	sublw	CONFIG_STATE		; are we configured?
+	btfss	STATUS,Z,ACCESS		; skip if yes
+	goto	standardRequestsError	; not yet configured
+	endm
 	
 setInterfaceRequest
-	movf		USB_USWSTAT, W, BANKED
-	select
-		case CONFIG_STATE
-			movlw	NUM_INTERFACES
-			subwf	USB_buffer_data+wIndex,W,BANKED
-			btfsc	STATUS,C,ACCESS
-			goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
-			movf	USB_buffer_data+wValue, W, BANKED
-			select
-				case 0	; currently support only bAlternateSetting of 0
-					goto	sendZeroByteAnswer
-				default
-					goto	standardRequestsError
-			ends
-			break
-		default
-			goto	standardRequestsError
-	ends
-	return
+	gotoRequestErrorIfNotConfigured
+
+	movlw	NUM_INTERFACES
+	subwf	USB_buffer_data+wIndex,W,BANKED
+	btfsc	STATUS,C,ACCESS
+	goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
+	movf	USB_buffer_data+wValue, W, BANKED
+	; bAlternateSetting needs to be 0
+	btfss	STATUS,Z,ACCESS		; skip if zero
+	goto	standardRequestsError	; not zero
+	goto	sendZeroByteAnswer	; ok
 
 getInterfaceRequest
-	movf		USB_USWSTAT, W, BANKED
-	select
-		case CONFIG_STATE
-			movlw	NUM_INTERFACES
-			subwf	USB_buffer_data+wIndex,W,BANKED
-			btfsc	STATUS,C,ACCESS
-			goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
-			banksel	BD0IAH
-			movf	BD0IAH, W, BANKED
-			movwf	FSR0H, ACCESS
-			movf	BD0IAL, W, BANKED	; get buffer pointer
-			movwf	FSR0L, ACCESS
-			clrf	INDF0		; always send back 0 for bAlternateSetting
-			movlw	0x01
-			movwf	BD0IBC, BANKED	; set byte count to 1
-			goto	sendAnswer
-		default
-			goto	standardRequestsError
-	ends
-	return
+	gotoRequestErrorIfNotConfigured
+
+	movlw	NUM_INTERFACES
+	subwf	USB_buffer_data+wIndex,W,BANKED
+	btfsc	STATUS,C,ACCESS
+	goto	standardRequestsError	; USB_buffer_data+wIndex < NUM_INTERFACES
+	banksel	BD0IAH
+	movf	BD0IAH, W, BANKED
+	movwf	FSR0H, ACCESS
+	movf	BD0IAL, W, BANKED	; get buffer pointer
+	movwf	FSR0L, ACCESS
+	clrf	INDF0		; always send back 0 for bAlternateSetting
+	movlw	0x01
+	movwf	BD0IBC, BANKED	; set byte count to 1
+	goto	sendAnswer
 
 setConfigurationRequest
 	movf	USB_buffer_data+wValue,W,BANKED
@@ -965,6 +959,10 @@ WaitConfiguredUSB
 
 	banksel		LED_states
 	clrf		LED_states, BANKED
+	clrf		LED_states+1, BANKED
+	clrf		LED_states+2, BANKED
+	clrf		LED_states+3, BANKED
+	clrf		LED_states+4, BANKED
 	return
 
 			END
