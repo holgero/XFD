@@ -265,7 +265,7 @@ resetUSB
 	movlw		DEFAULT_STATE
 	movwf		USB_USWSTAT, BANKED
 	movlw		0x01
-	movwf		USB_device_status, BANKED	; self powered, remote wakeup disabled
+	movwf		USB_device_status, BANKED ; self powered, remote wakeup disabled
 	return
 
 	; dispatch request codes to specific labels
@@ -702,71 +702,79 @@ getReportDescriptor0
 	goto	sendDescriptorRequestAnswer
 
 classRequests
-	movf		USB_buffer_data+bRequest, W, BANKED
-	select
-		case GET_REPORT
-			; report current LED_state
-			banksel		BD0IAH
-			movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
-			movwf		FSR0H, ACCESS
-			movf		BD0IAL, W, BANKED
-			movwf		FSR0L, ACCESS		; ...into FSR0
-			banksel 	LED_states
-			movf		LED_states, W, BANKED	; red led
-			movwf		POSTINC0
-			movf		LED_states+1, W, BANKED	; yellow led
-			movwf		POSTINC0
-			movf		LED_states+2, W, BANKED	; green led
-			movwf		POSTINC0
-			movf		LED_states+3, W, BANKED	; blue led
-			movwf		POSTINC0
-			movf		LED_states+4, W, BANKED	; white led
-			movwf		INDF0			; ...to EP0 IN buffer
-			banksel		BD0IBC
-			movlw		0x05
-			movwf		BD0IBC, BANKED		; set EP0 IN buffer byte count
-			goto		sendAnswer
-		case SET_REPORT
-			movwf		USB_dev_req, BANKED	; processing a SET_REPORT request
-			break
-		case GET_PROTOCOL
-			banksel		BD0IAH
-			movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
-			movwf		FSR0H, ACCESS
-			movf		BD0IAL, W, BANKED
-			movwf		FSR0L, ACCESS		; ...into FSR0
-			banksel		USB_protocol
-			movf		USB_protocol, W, BANKED
-			movwf		INDF0
-			banksel		BD0IBC
-			movlw		0x01
-			movwf		BD0IBC, BANKED		; set byte count to 1
-			goto		sendAnswer
-		case SET_PROTOCOL
-			movf		USB_buffer_data+wValue, W, BANKED
-			movwf		USB_protocol, BANKED	; update the new protocol value
-			goto		sendAnswerOk
-		case GET_IDLE
-			banksel		BD0IAH
-			movf		BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
-			movwf		FSR0H, ACCESS
-			movf		BD0IAL, W, BANKED
-			movwf		FSR0L, ACCESS		; ...into FSR0
-			banksel		USB_idle_rate
-			movf		USB_idle_rate, W, BANKED
-			movwf		INDF0
-			banksel		BD0IBC
-			movlw		0x01
-			movwf		BD0IBC, BANKED		; set byte count to 1
-			goto		sendAnswer
-		case SET_IDLE
-			movf		USB_buffer_data+wValue, W, BANKED
-			movwf		USB_idle_rate, BANKED	; update the new idle rate
-			goto		sendAnswerOk
-		default
-			goto		standardRequestsError
-	ends
+	movf	USB_buffer_data+bRequest, W, BANKED
+	dispatchRequest	GET_REPORT, classGetReport
+	dispatchRequest	SET_REPORT, classSetReport
+	dispatchRequest	GET_PROTOCOL, classGetProtocol
+	dispatchRequest	SET_PROTOCOL, classSetProtocol
+	dispatchRequest	GET_IDLE, classGetIdle
+	dispatchRequest	SET_IDLE, classSetIdle
+	goto	standardRequestsError
+
+classGetReport				; report current LED_state
+	banksel	BD0IAH
+	movf	BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+	movwf	FSR0H, ACCESS
+	movf	BD0IAL, W, BANKED
+	movwf	FSR0L, ACCESS		; ...into FSR0
+	banksel LED_states
+	movf	LED_states, W, BANKED	; red led
+	movwf	POSTINC0
+	movf	LED_states+1, W, BANKED	; yellow led
+	movwf	POSTINC0
+	movf	LED_states+2, W, BANKED	; green led
+	movwf	POSTINC0
+	movf	LED_states+3, W, BANKED	; blue led
+	movwf	POSTINC0
+	movf	LED_states+4, W, BANKED	; white led
+	movwf	INDF0			; ...to EP0 IN buffer
+	banksel	BD0IBC
+	movlw	0x05
+	movwf	BD0IBC, BANKED		; set EP0 IN buffer byte count
+	goto	sendAnswer
+
+classSetReport
+	movlw	SET_REPORT
+	movwf	USB_dev_req, BANKED	; processing a SET_REPORT request
 	return
+
+classGetProtocol
+	banksel	BD0IAH
+	movf	BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+	movwf	FSR0H, ACCESS
+	movf	BD0IAL, W, BANKED
+	movwf	FSR0L, ACCESS		; ...into FSR0
+	banksel	USB_protocol
+	movf	USB_protocol, W, BANKED
+	movwf	INDF0
+	banksel	BD0IBC
+	movlw	0x01
+	movwf	BD0IBC, BANKED		; set byte count to 1
+	goto	sendAnswer
+
+classSetProtocol
+	movf	USB_buffer_data+wValue, W, BANKED
+	movwf	USB_protocol, BANKED	; update the new protocol value
+	goto	sendAnswerOk
+
+classGetIdle
+	banksel	BD0IAH
+	movf	BD0IAH, W, BANKED	; put EP0 IN buffer pointer...
+	movwf	FSR0H, ACCESS
+	movf	BD0IAL, W, BANKED
+	movwf	FSR0L, ACCESS		; ...into FSR0
+	banksel	USB_idle_rate
+	movf	USB_idle_rate, W, BANKED
+	movwf	INDF0
+	banksel	BD0IBC
+	movlw	0x01
+	movwf	BD0IBC, BANKED		; set byte count to 1
+	goto	sendAnswer
+
+classSetIdle
+	movf	USB_buffer_data+wValue, W, BANKED
+	movwf	USB_idle_rate, BANKED	; update the new idle rate
+	goto	sendAnswerOk
 
 processInToken
 	banksel		USB_USTAT
