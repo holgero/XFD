@@ -5,7 +5,7 @@
 *.o
 *~
 host/usbleds
-java/target
-java/.classpath
-java/.project
-java/.settings
+target/
+.classpath
+.project
+.settings/
