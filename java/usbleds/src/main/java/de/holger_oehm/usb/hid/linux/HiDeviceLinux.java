@@ -1,11 +1,9 @@
 package de.holger_oehm.usb.hid.linux;
 
-import java.io.IOException;
-
 import com.sun.jna.Pointer;
 
-import de.holger_oehm.usb.hid.HiDeviceException;
 import de.holger_oehm.usb.hid.HiDevice;
+import de.holger_oehm.usb.hid.HiDeviceException;
 import de.holger_oehm.usb.hid.USBAddress;
 
 public class HiDeviceLinux implements HiDevice {
@@ -46,7 +44,7 @@ public class HiDeviceLinux implements HiDevice {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         final Pointer deviceHandle = handle;
         handle = null;
         Usblib.INSTANCE.usb_release_interface(deviceHandle, 0);

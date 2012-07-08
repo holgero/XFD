@@ -5,6 +5,13 @@ import java.io.Closeable;
 public interface HiDevice extends Closeable {
 
     /**
+     * Closes this HiDevice and releases any system resources associated with
+     * it.
+     */
+    @Override
+    public void close();
+
+    /**
      * Sends an output report to this hi device.
      * 
      * @param reportNumber

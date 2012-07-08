@@ -9,19 +9,24 @@ public class BuildMonitor {
 
     private static final USBAddress DREAM_CHEEKY = new USBAddress(0x1d34, 0x0004);
     private static final USBAddress USBLEDS = new USBAddress(0x04d8, 0xff0c);
+    private static final USBLeds LEDS = USBLeds.Factory.createInstance(USBLEDS);
 
     public static void main(final String[] args) {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                LEDS.close();
+            }
+        });
         new BuildMonitor(args[0]).run();
     }
 
     private final JenkinsMonitor monitor;
-    private final USBLeds leds;
     private final String url;
 
     public BuildMonitor(final String url) {
         this.url = url;
         monitor = new JenkinsMonitor(url);
-        leds = USBLeds.Factory.createInstance(USBLEDS);
     }
 
     private void run() {
@@ -32,16 +37,16 @@ public class BuildMonitor {
                 System.out.println(url + ": " + buildState);
                 switch (buildState) {
                 case OK:
-                    leds.green();
+                    LEDS.green();
                     break;
                 case BUILDING:
-                    leds.blue();
+                    LEDS.blue();
                     break;
                 case INSTABLE:
-                    leds.yellow();
+                    LEDS.yellow();
                     break;
                 case FAILED:
-                    leds.red();
+                    LEDS.red();
                     break;
                 default:
                     throw new IllegalStateException("Unexpected state " + buildState);
@@ -49,10 +54,11 @@ public class BuildMonitor {
                 Thread.sleep(60000);
             } catch (final InterruptedException interrupt) {
                 Thread.currentThread().interrupt();
+                LEDS.off();
                 return;
             } catch (final Exception e) {
                 System.err.println(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage());
-                leds.magenta();
+                LEDS.magenta();
             }
         } while (true);
     }

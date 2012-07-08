@@ -1,7 +1,5 @@
 package de.holger_oehm.usb.leds;
 
-import java.io.IOException;
-
 import de.holger_oehm.usb.hid.HiDevice;
 
 abstract class AbstractLeds implements USBLeds {
@@ -14,7 +12,8 @@ abstract class AbstractLeds implements USBLeds {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
+        off();
         device.close();
     }
 

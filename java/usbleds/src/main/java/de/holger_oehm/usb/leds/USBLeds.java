@@ -34,4 +34,11 @@ public interface USBLeds extends Closeable {
     void magenta();
 
     void cyan();
+
+    /**
+     * Switches the LEDs off, closes this USBLeds device and releases any system
+     * resources associated with it.
+     */
+    @Override
+    public void close();
 }
