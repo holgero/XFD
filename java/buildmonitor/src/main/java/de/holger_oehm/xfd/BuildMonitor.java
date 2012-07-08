@@ -52,6 +52,7 @@ public class BuildMonitor {
                 return;
             } catch (final Exception e) {
                 System.err.println(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage());
+                leds.magenta();
             }
         } while (true);
     }
