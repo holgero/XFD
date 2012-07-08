@@ -11,5 +11,6 @@
 	</properties>
 	<modules>
 		<module>usbleds</module>
+		<module>buildmonitor</module>
 	</modules>
 </project>
