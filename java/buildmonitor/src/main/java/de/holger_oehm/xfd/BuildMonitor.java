@@ -1,15 +1,11 @@
 package de.holger_oehm.xfd;
 
-import de.holger_oehm.usb.hid.USBAddress;
 import de.holger_oehm.usb.leds.USBLeds;
 import de.holger_oehm.xfd.jenkins.BuildState;
 import de.holger_oehm.xfd.jenkins.JenkinsMonitor;
 
 public class BuildMonitor {
-
-    private static final USBAddress DREAM_CHEEKY = new USBAddress(0x1d34, 0x0004);
-    private static final USBAddress USBLEDS = new USBAddress(0x04d8, 0xff0c);
-    private static final USBLeds LEDS = USBLeds.Factory.createInstance(USBLEDS);
+    private static final USBLeds LEDS = USBLeds.Factory.enumerateLedDevices().next();
 
     public static void main(final String[] args) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
