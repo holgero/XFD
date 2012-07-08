@@ -6,3 +6,6 @@
 *~
 host/usbleds
 java/target
+java/.classpath
+java/.project
+java/.settings
