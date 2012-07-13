@@ -78,6 +78,8 @@ Main
 	clrf	PORTA, ACCESS
 	movlw	0x0F
 	movwf	ADCON1, ACCESS		; set up PORTA to be digital I/Os
+	movlw	b'11111000'		; LEDs on RA0,1,2
+	movwf	TRISA, ACCESS
 
 	clrf	PORTB, ACCESS
 	movlw	b'11100000'		; LEDs on 5 LSBs of Port B
@@ -114,12 +116,25 @@ setled	macro	index
 	bsf		PORTB, index, ACCESS		; bit 0 set, set port bit
 	endm
 
+	; inverted logic for LEDs on PORTA (pin 0 -> led lights)
+setsecondled	macro	index
+	btfss		LED_states + index, 0, BANKED
+	bsf		PORTA, index, ACCESS		; bit 0 cleared, set port bit
+	btfsc		LED_states + index, 0, BANKED
+	bcf		PORTA, index, ACCESS		; bit 0 set, clear port bit
+	endm
+
+
 	banksel		LED_states
 	setled	0	; red
 	setled	1	; yellow
 	setled	2	; green
 	setled	3	; blue
 	setled	4	; white
+
+	setsecondled	0;
+	setsecondled	1;
+	setsecondled	2;
 
 	goto mainLoop
 
