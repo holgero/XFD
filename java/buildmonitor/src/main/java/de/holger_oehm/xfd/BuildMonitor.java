@@ -36,8 +36,6 @@ public class BuildMonitor {
                     LEDS.green();
                     break;
                 case BUILDING:
-                    LEDS.blue();
-                    break;
                 case INSTABLE:
                     LEDS.yellow();
                     break;
