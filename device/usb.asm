@@ -15,6 +15,7 @@
 ;**************************************************************
 ; exported variables
 	global	LED_states
+	global	USB_received
 
 ;**************************************************************
 ; local definitions
@@ -127,6 +128,7 @@ USB_loop_index		RES	1
 USB_packet_length	RES	1
 USB_USTAT		RES	1
 USB_USWSTAT		RES	1
+USB_received		RES	1
 LED_states		RES	5
 
 ;**************************************************************
@@ -927,6 +929,7 @@ setReport
 	movwf	LED_states+3, BANKED
 	movf	INDF0, W	
 	movwf	LED_states+4, BANKED
+	bsf	USB_received,0,BANKED
 	return
 
 sendDescriptorRequestAnswer
