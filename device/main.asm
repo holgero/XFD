@@ -1,47 +1,31 @@
 ; eXtreme Feedback Device
 ; USB connected device which switches some LEDs on and off
 ; main routine and configuration
-#include <p18f2550.inc>
+#include <p18f13k50.inc>
 
 ;**************************************************************
 ; configuration
-        config PLLDIV   = 5		; crystal 20 Mhz
-        config CPUDIV   = OSC3_PLL4	; cpu     24 MHz
-        config USBDIV   = 2		; USB clock from PLL/2
-        config FOSC     = HSPLL_HS	; HS, PLL enabled, HS used by USB
-        config FCMEN    = OFF
+	config USBDIV	= ON
+	config FOSC	= HS
+	config PLLEN	= ON
+        config FCMEN	= OFF
         config IESO     = OFF
-        config PWRT     = OFF
-        config BOR      = ON
-        config BORV     = 3
-        config VREGEN   = ON		; USB voltage regulator enable
-        config WDT      = OFF
         config WDTPS    = 32768
         config MCLRE    = ON
-        config LPT1OSC  = OFF
-        config PBADEN   = OFF
-        config CCP2MX   = ON
         config STVREN   = ON
         config LVP      = OFF
-        config DEBUG    = OFF
         config XINST    = OFF
         config CP0      = OFF
         config CP1      = OFF
-        config CP2      = OFF
-        config CP3      = OFF
-        config WRT3     = OFF
-        config EBTR3    = OFF
         config CPB      = OFF
         config CPD      = OFF
         config WRT0     = OFF
         config WRT1     = OFF
-        config WRT2     = OFF
         config WRTB     = OFF
         config WRTC     = OFF
         config WRTD     = OFF
         config EBTR0    = OFF
         config EBTR1    = OFF
-        config EBTR2    = OFF
 ;**************************************************************
 ; imported subroutines
 ; usb.asm
@@ -84,14 +68,9 @@ main_code		CODE	0x01600
 Main
 	movlw	1			; wait a msec
 	call	waitMilliSeconds	
-	clrf	PORTA, ACCESS
-	movlw	0x0F
-	movwf	ADCON1, ACCESS		; set up PORTA to be digital I/Os
-	movlw	b'11111000'		; LEDs on RA0,1,2
-	movwf	TRISA, ACCESS
 
 	clrf	PORTB, ACCESS
-	movlw	b'11100000'		; LEDs on 5 LSBs of Port B
+	movlw	b'10001111'		; LEDs on Port B, RB<4:6>
 	movwf	TRISB, ACCESS
 
         movlw	TIMER0H_VAL
@@ -103,10 +82,6 @@ Main
 					;	(Timer0 will go off every ~10 ms )
 		
 	call	InitUSB			; initialize the USB module
-
-;	CAVE: remove for production
-;	goto	mainLoop	; makes sense only for simulation, do not wait for USB
-;	CAVE: remove for production
 
 	call	WaitConfiguredUSB
 
@@ -144,9 +119,8 @@ waitTimerLoop
 	incf	blinkenLights,F,BANKED
 	btfsc	blinkenLights,1,BANKED	; 2*256*10ms: changes every 5.2s (not true, it is more like 10s, but dont know why... probably the timer fires only every 20ms???)
 	goto	yellowOn
-	clrf	PORTB,ACCESS		; all off
-	movlw	0x07			; also all off (inverted)
-	movwf	PORTA,ACCESS
+	movlw	b'01110000'		; all off (inverted)
+	movwf	PORTB,ACCESS
 	goto	mainLoop
 
 notYetBlinking
@@ -156,26 +130,15 @@ notYetBlinking
 yellowOn
 	clrf	blinkenLights,BANKED
 	bsf	blinkenLights,7,BANKED
-	movlw	0x05			; all off, but yellow
-	movwf	PORTA,ACCESS
-	movlw	0x02			; yellow on
-	movwf	PORTB,ACCESS
+	bcf	PORTB,5,ACCESS		; yellow on: clear RB5
 	goto	mainLoop
 
-	; set leds according to led state
-setled		macro	index
+	; set leds according to led state, inverted logic. Use bits 4:6
+setled	macro	index
 	btfss	LED_states + index, 0, BANKED
-	bcf	PORTB, index, ACCESS	; bit 0 cleared, clear port bit
+	bsf	PORTB, index + 4, ACCESS	; bit 0 cleared, set port bit
 	btfsc	LED_states + index, 0, BANKED
-	bsf	PORTB, index, ACCESS	; bit 0 set, set port bit
-	endm
-
-	; inverted logic for LEDs on PORTA (pin 0 -> led lights)
-setsecondled	macro	index
-	btfss	LED_states + index, 0, BANKED
-	bsf	PORTA, index, ACCESS	; bit 0 cleared, set port bit
-	btfsc	LED_states + index, 0, BANKED
-	bcf	PORTA, index, ACCESS	; bit 0 set, clear port bit
+	bcf	PORTB, index + 4, ACCESS		; bit 0 set, clear port bit
 	endm
 
 setLEDs
@@ -188,12 +151,6 @@ setLEDs
 	setled	0	; red
 	setled	1	; yellow
 	setled	2	; green
-	setled	3	; blue
-	setled	4	; white
-
-	setsecondled	0
-	setsecondled	1
-	setsecondled	2
 
 	goto mainLoop
 

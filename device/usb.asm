@@ -4,7 +4,7 @@
 
 ;**************************************************************
 ; includes
-#include <p18f2550.inc>
+#include <p18f13k50.inc>
 
 ;**************************************************************
 ; exported subroutines
@@ -38,7 +38,7 @@ TOKEN_IN		EQU	(0x09<<2)
 TOKEN_SETUP		EQU	(0x0D<<2)
 
 ; usb addresses
-USBMEMORY		EQU	0x0400
+USBMEMORY		EQU	0x0200
 BD0STAT			EQU	( USBMEMORY + 0x00 )
 BD0CNT			EQU	( USBMEMORY + 0x01 )
 BD0ADRL			EQU	( USBMEMORY + 0x02 )
@@ -326,14 +326,6 @@ resetUSB
 	clrf		UEP5, ACCESS
 	clrf		UEP6, ACCESS
 	clrf		UEP7, ACCESS
-	clrf		UEP8, ACCESS
-	clrf		UEP9, ACCESS
-	clrf		UEP10, ACCESS
-	clrf		UEP11, ACCESS
-	clrf		UEP12, ACCESS
-	clrf		UEP13, ACCESS
-	clrf		UEP14, ACCESS
-	clrf		UEP15, ACCESS
 
 	banksel		BD0CNT
 	movlw		0x08

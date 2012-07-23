@@ -3,7 +3,7 @@ include-dir=/home/holger/Elektronik/MicroController/PikDev/XFD
 list=false
 other-options=
 radix=dec
-target-device=p18f2550
+target-device=p18f13k50
 warn-level=2
 
 [C]
