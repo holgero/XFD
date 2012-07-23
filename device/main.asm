@@ -70,7 +70,7 @@ Main
 	movlw	3			; wait a bit: 3 ms
 	call	waitMilliSeconds
 
-	clrf	PORTB, ACCESS
+	clrf	LATB, ACCESS
 	movlw	b'10001111'		; LEDs on Port B, RB<4:6>
 	movwf	TRISB, ACCESS
 
@@ -87,9 +87,11 @@ Main
 	call	WaitConfiguredUSB
 
 	banksel	noSignFromHostL
-	clrf	noSignFromHostL
-	clrf	noSignFromHostH
-	clrf	blinkenLights
+	clrf	noSignFromHostL, BANKED
+	clrf	noSignFromHostH, BANKED
+	clrf	blinkenLights, BANKED
+	movlw	b'01110000'		; switch all leds off (inverted)
+	movwf	LATB,ACCESS
 
 mainLoop
 	banksel	USB_received
@@ -121,7 +123,7 @@ waitTimerLoop
 	btfsc	blinkenLights,1,BANKED	; 2*256*10ms: changes every 5.2s (not true, it is more like 10s, but dont know why... probably the timer fires only every 20ms???)
 	goto	yellowOn
 	movlw	b'01110000'		; all off (inverted)
-	movwf	PORTB,ACCESS
+	movwf	LATB,ACCESS
 	goto	mainLoop
 
 notYetBlinking
@@ -131,15 +133,15 @@ notYetBlinking
 yellowOn
 	clrf	blinkenLights,BANKED
 	bsf	blinkenLights,7,BANKED
-	bcf	PORTB,5,ACCESS		; yellow on: clear RB5
+	bcf	LATB,5,ACCESS		; yellow on: clear RB5
 	goto	mainLoop
 
 	; set leds according to led state, inverted logic. Use bits 4:6
 setled	macro	index
 	btfss	LED_states + index, 0, BANKED
-	bsf	PORTB, index + 4, ACCESS	; bit 0 cleared, set port bit
+	bsf	LATB, index + 4, ACCESS	; bit 0 cleared, set port bit
 	btfsc	LED_states + index, 0, BANKED
-	bcf	PORTB, index + 4, ACCESS		; bit 0 set, clear port bit
+	bcf	LATB, index + 4, ACCESS	; bit 0 set, clear port bit
 	endm
 
 setLEDs

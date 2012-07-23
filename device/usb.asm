@@ -319,7 +319,7 @@ InitUSB
 ServiceUSB
 	banksel	UEIR
 	btfsc	UIR, UERRIF, ACCESS
-	clrf		UEIR, ACCESS
+	clrf		UEIR, BANKED
 	btfsc	UIR, SOFIF, ACCESS
 	bcf		UIR, SOFIF, ACCESS
 	btfsc	UIR, IDLEIF, ACCESS
@@ -577,7 +577,7 @@ setConfiguredState
 	movwf	BD1STAT+0x08, BANKED	; clear UOWN bit (PIC can write EP1 IN buffer)
 	movlw	ENDPT_IN
 	banksel	UEP1
-	movwf	UEP1, ACCESS		; enable EP1 for interrupt in transfers
+	movwf	UEP1, BANKED		; enable EP1 for interrupt in transfers
 	banksel	BD1CNT+0x08
 	goto	sendAnswerOk
 
