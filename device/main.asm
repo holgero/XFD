@@ -10,6 +10,7 @@
 	config PLLEN	= ON
         config FCMEN	= OFF
         config IESO     = OFF
+	config WDTEN	= OFF
         config WDTPS    = 32768
         config MCLRE    = ON
         config STVREN   = ON
@@ -66,8 +67,8 @@ lowprio_interruptvector	ORG	0x0818
 ; main code
 main_code		CODE	0x01600
 Main
-	movlw	1			; wait a msec
-	call	waitMilliSeconds	
+	movlw	3			; wait a bit: 3 ms
+	call	waitMilliSeconds
 
 	clrf	PORTB, ACCESS
 	movlw	b'10001111'		; LEDs on Port B, RB<4:6>
@@ -97,7 +98,6 @@ waitTimerLoop
 	; service usb requests as long as timer0 runs
 	call	ServiceUSB
 	btfss	INTCON, T0IF, ACCESS
-;	CAVE: uncomment for production
 	goto	waitTimerLoop
 
 	bcf	INTCON, T0IF, ACCESS	; clear Timer0 interrupt flag
@@ -105,6 +105,7 @@ waitTimerLoop
 	movwf	TMR0H, ACCESS
 	movlw	TIMER0L_VAL
 	movwf	TMR0L, ACCESS
+	banksel	USB_received
 	btfsc	USB_received,0,BANKED
 	goto	setLEDs
 

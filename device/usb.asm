@@ -7,6 +7,18 @@
 #include <p18f13k50.inc>
 
 ;**************************************************************
+; PIC18F1xK50: the following SFRs are not in the access bank!
+;UEP0 - UEP7: 0x0F53 -  0x0F5A
+;UEIE             EQU  H'0F5B'
+;UADDR            EQU  H'0F5C'
+;UFRML            EQU  H'0F5D'
+;UFRMH            EQU  H'0F5E'
+;UEIR             EQU  H'0F5F'
+;**************************************************************
+
+
+
+;**************************************************************
 ; exported subroutines
 	global	InitUSB
 	global	ServiceUSB
@@ -49,6 +61,10 @@ BD1ADRL			EQU	( USBMEMORY + 0x06 )
 BD1ADRH			EQU	( USBMEMORY + 0x07 )
 ; Register location after last buffer descriptor register
 USB_Buffer		EQU	( USBMEMORY + 0x0080 )
+
+; BDSTAT bits
+UOWN			EQU	7
+DTSEN			EQU	3
 
 ; offsets from the beginning of the Buffer Descriptor
 ADDRESSL		EQU	0x02
@@ -273,13 +289,18 @@ db	String0 - Descriptor_begin, String1 - Descriptor_begin
 db	String2 - Descriptor_begin
 
 InitUSB
+; begin debugging code
+	movlw	b'11111000'		; state as LEDs on RC<0:2>
+	movwf	TRISC,ACCESS
+	clrf	PORTC			; start with all LEDs off
+; end debugging code
 	clrf	UIE, ACCESS		; mask all USB interrupts
 	clrf	UIR, ACCESS		; clear all USB interrupt flags
-	; configure USB for low-speed transfers and to use the on-chip transciever and pull-up resistor
-	movlw	0x14
-	movwf	UCFG, ACCESS
-	movlw	0x08
-	movwf	UCON, ACCESS		; enable the USB module and its supporting circuitry
+	clrf	UCFG, ACCESS		; disable eye pattern and ping-pong buffers
+	bsf	UCFG, FSEN, ACCESS	; full speed transfer
+	bsf	UCFG, UPUEN, ACCESS	; internal pull-up resistors
+	clrf	UCON, ACCESS
+	bsf	UCON, USBEN, ACCESS	; enable USB module
 	banksel	USB_curr_config
 	clrf	USB_curr_config, BANKED
 	clrf	USB_idle_rate, BANKED
@@ -289,9 +310,14 @@ InitUSB
 	movwf	USB_protocol, BANKED	; default protocol to report protocol initially
 	movlw	NO_REQUEST
 	movwf	USB_dev_req, BANKED	; No device requests in process
+; begin debugging code
+	movlw	0x01
+	movwf	PORTC,ACCESS		; 1: init done
+; end debugging code
 	return
 
 ServiceUSB
+	banksel	UEIR
 	btfsc	UIR, UERRIF, ACCESS
 	clrf		UEIR, ACCESS
 	btfsc	UIR, SOFIF, ACCESS
@@ -312,42 +338,52 @@ serviceUsbActvifNotSet
 	return
 
 resetUSB
+; begin debugging code
+	movlw	0x02
+	movwf	PORTC,ACCESS		; 2: reset called
+; end debugging code
 	banksel		USB_curr_config
 	clrf		USB_curr_config, BANKED
 	bcf		UIR, TRNIF, ACCESS	; clear TRNIF four times to clear out the USTAT FIFO
 	bcf 		UIR, TRNIF, ACCESS
 	bcf		UIR, TRNIF, ACCESS
 	bcf		UIR, TRNIF, ACCESS
-	clrf		UEP0, ACCESS		; clear all EP control registers to disable all endpoints
-	clrf		UEP1, ACCESS
-	clrf		UEP2, ACCESS
-	clrf		UEP3, ACCESS
-	clrf		UEP4, ACCESS
-	clrf		UEP5, ACCESS
-	clrf		UEP6, ACCESS
-	clrf		UEP7, ACCESS
+	banksel		UEP0
+	clrf		UEP0, BANKED	; clear all EP control registers to disable all endpoints
+	clrf		UEP1, BANKED
+	clrf		UEP2, BANKED
+	clrf		UEP3, BANKED
+	clrf		UEP4, BANKED
+	clrf		UEP5, BANKED
+	clrf		UEP6, BANKED
+	clrf		UEP7, BANKED
 
 	banksel		BD0CNT
+	; set up endpoint EP0
 	movlw		0x08
 	movwf		BD0CNT, BANKED
 	movlw		low USB_Buffer		; EP0 OUT gets a buffer...
 	movwf		BD0ADRL, BANKED
 	movlw		high USB_Buffer
 	movwf		BD0ADRH, BANKED		; ...set up its address
-	movlw		0x88			; set UOWN bit (USB can write)
-	movwf		BD0STAT, BANKED
-	movlw		low (USB_Buffer+0x08)	; EP0 IN gets a buffer...
+	clrf		BD0STAT, BANKED
+	bsf		BD0STAT, UOWN, BANKED	; set UOWN: USB can write
+	; set up endpoint EP1
+	movlw		0x08
+	movwf		BD1CNT, BANKED
+	movlw		low (USB_Buffer+0x08)	; EP1 IN gets a buffer...
 	movwf		BD1ADRL, BANKED
 	movlw		high (USB_Buffer+0x08)
 	movwf		BD1ADRH, BANKED		; ...set up its address
-	movlw		0x08			; clear UOWN bit (MCU can write)
-	movwf		BD1STAT, BANKED
-	clrf		UADDR, ACCESS		; set USB Address to 0
+	clrf		BD1STAT, BANKED
+	bsf		BD1STAT, DTSEN, BANKED	; enable Data Toggle Synchronization
+	banksel		UADDR
+	clrf		UADDR, BANKED		; set USB Address to 0
 	clrf		UIR, ACCESS		; clear all the USB interrupt flags
 	movlw		ENDPT_CONTROL
-	movwf		UEP0, ACCESS		; EP0 is a control pipe and requires an ACK
+	movwf		UEP0, BANKED		; EP0 is a control pipe and requires an ACK
 	movlw		0xFF			; enable all error interrupts
-	movwf		UEIE, ACCESS
+	movwf		UEIE, BANKED
 	banksel		USB_USWSTAT
 	movlw		DEFAULT_STATE
 	movwf		USB_USWSTAT, BANKED
@@ -364,6 +400,10 @@ dispatchRequest	macro	requestCode, requestLabel
 	endm
 
 processUSBTransaction
+; begin debugging code
+	movlw	0x03
+	movwf	PORTC,ACCESS		; 3: any transaction to process
+; end debugging code
 	movlw		high( USBMEMORY )
 	movwf		FSR0H, ACCESS
 	movf		USTAT, W, ACCESS
@@ -390,6 +430,10 @@ processUSBTransaction
 	return
 
 processSetupToken
+; begin debugging code
+	movlw	0x04
+	movwf	PORTC,ACCESS		; 4: process setup token
+; end debugging code
 	banksel		USB_buffer_data
 	movf		USB_buffer_desc+ADDRESSH, W, BANKED
 	movwf		FSR0H, ACCESS
@@ -439,6 +483,10 @@ setupTokenAllRequestTypes
 	goto		standardRequestsError
 
 standardRequests
+; begin debugging code
+	movlw	0x07
+	movwf	PORTC,ACCESS		; 7: standard requests
+; end debugging code
 	movf		USB_buffer_data+bRequest, W, BANKED
 	dispatchRequest	GET_STATUS, getStatusRequest
 	dispatchRequest	CLEAR_FEATURE, setFeatureRequest
@@ -452,7 +500,8 @@ standardRequests
 
 vendorRequests
 standardRequestsError
-	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
+	banksel		UEP0
+	bsf		UEP0, EPSTALL, BANKED	; set EP0 protocol stall bit to signify Request Error
 	return
 
 sendAnswerOk
@@ -527,7 +576,9 @@ setConfiguredState
 	movlw	0x48
 	movwf	BD1STAT+0x08, BANKED	; clear UOWN bit (PIC can write EP1 IN buffer)
 	movlw	ENDPT_IN
+	banksel	UEP1
 	movwf	UEP1, ACCESS		; enable EP1 for interrupt in transfers
+	banksel	BD1CNT+0x08
 	goto	sendAnswerOk
 
 getConfigurationRequest
@@ -610,11 +661,13 @@ getEndpointStatusInAddressStateRequest
 	movwf	FSR0H, ACCESS
 	movf	BD1ADRL, W, BANKED
 	movwf	FSR0L, ACCESS		; ...into FSR0
+	banksel	UEP0
 	movlw	0x00
-	btfsc	UEP0, EPSTALL, ACCESS
+	btfsc	UEP0, EPSTALL, BANKED
 	movlw	0x01
 	movwf	POSTINC0
 	clrf	INDF0
+	banksel	BD1CNT
 	movlw	0x02
 	movwf	BD1CNT, BANKED		; set byte count to 2
 	goto	sendAnswer
@@ -678,11 +731,15 @@ setEndpointFeatureInAddressStateRequest
 	andlw	0x0F			; strip off direction bit
 	btfss	STATUS,Z,ACCESS		; is it EP0?
 	goto	standardRequestsError	; not zero
-	bcf	UEP0, EPSTALL, ACCESS
+	banksel	UEP0
+	bcf	UEP0, EPSTALL, BANKED
+	banksel	USB_buffer_data+bRequest
 	movf	USB_buffer_data+bRequest, W, BANKED
 	sublw	CLEAR_FEATURE
-	btfss	STATUS, Z		; skip if == CLEAR_FEATURE
-	bsf	UEP0, EPSTALL, ACCESS
+	banksel	UEP0
+	btfss	STATUS, Z, ACCESS	; skip if == CLEAR_FEATURE
+	bsf	UEP0, EPSTALL, BANKED
+	banksel	USB_buffer_data
 	goto	sendAnswerOk
 
 setEndpointFeatureInConfiguredStateRequest
@@ -864,6 +921,10 @@ classSetIdle
 	goto	sendAnswerOk
 
 processInToken
+; begin debugging code
+	movlw	0x05
+	movwf	PORTC,ACCESS		; 5: process in token
+; end debugging code
 	banksel	USB_USTAT
 	movf	USB_USTAT, W, BANKED
 	andlw	0x18			; extract the EP bits
@@ -879,14 +940,20 @@ processInToken
 	btfss	STATUS, Z, ACCESS	; skip if it is SET_ADDRESS
 	return				; not SET_ADDRESS: just return
 	movf	USB_address_pending, W, BANKED
-	movwf	UADDR, ACCESS
+	banksel	UADDR
+	movwf	UADDR, BANKED
 	movlw	ADDRESS_STATE
 	btfsc	STATUS, Z, ACCESS	; skip if USB_address_pending was not zero
 	movlw	DEFAULT_STATE		; zero value corresponds to default state
+	banksel	USB_USWSTAT
 	movwf	USB_USWSTAT, BANKED
 	return
 
 processOutToken
+; begin debugging code
+	movlw	0x06
+	movwf	PORTC,ACCESS		; 6: process out token
+; end debugging code
 	banksel	USB_USTAT
 	movf	USB_USTAT, W, BANKED
 	andlw	0x18			; extract the EP bits
