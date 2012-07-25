@@ -1,0 +1,50 @@
+h1. eXtreme Fedback Device
+
+The aim is to bring the feedback from the continous integration build
+faster to the developer.
+For this a microcontroller (PIC18Fxx5x) controls some indicators (typically 
+three LEDs mimicing a traffic light). The host runs a java program that
+polls the CI build server and tells the microcontroller via usb which
+LED(s) to light.
+
+h2. Building
+
+To build: Run make in the top level directory as this:
+$ make VID=<vid> PID=<pid>
+Where <vid> is the vendor id and pid is the product id you want to use for
+your device in hexadecimal without a leading "0x".
+Example: $ make VID=0A0A PID=A0A0
+(I am trying to obtain my own VID:PID combination for this device,
+but had no success so far. As soon as I have a valid address, the build step
+will become somewhat simpler.)
+
+Needs to compile: make, gcc++, javac, maven, gputils
+Needs at runtime: java, usblib (on linux), HID.DLL (on windows).
+
+If all goes well the main result will be a jar file under
+buildmonitor/target named buildmonitor-*-jar-with-dependencies.jar. Use
+it with a command line like this:
+
+$ java -jar buildmonitor-*-jar-with-dependencies.jar http://jenkins.my.domain:8080/view/BuildViewToWatch
+
+h2. Contents
+
+Directories:
+device			firmware for the microcontroller
+host			C executable and some demo scripts, mainly used
+			to test the firmware
+java/usbleds		usb leds java driver	
+java/buildmonitor	main program with the build monitor
+
+See also the file CREDITS.
+
+Branches:
+master:		Main branch, based on PIC18F2450, configurable VID:PID
+dream_cheeky:	Device mimics a DreamCheeky USB Mail Notifier device,
+		VID:PID is 1d34:0004
+18f13k50:	uses PIC18F13K50, configurable VID:PID
+
+h2. Future Plans
+
+TODO: add hardware spec./schematics, pcbs, etc.
+TODO: add some pictures of the devices I built
