@@ -36,6 +36,9 @@ host			C executable and some demo scripts, mainly used
 java/usbleds		usb leds java driver	
 java/buildmonitor	main program with the build monitor
 doc			additional files for documentation purposes
+schematic		schematics for the device hardware, XFD.sch is the
+			source file for gschem (http://www.geda-project.org/)
+			view XFD.jpeg if you do not have gEda/gschem.
 
 See also the file CREDITS.
 
@@ -47,4 +50,4 @@ dream_cheeky:	Device mimics a DreamCheeky USB Mail Notifier device,
 
 h2. Future Plans
 
-TODO: add hardware spec./schematics, pcbs, etc.
+TODO: add hardware spec., pcbs
