@@ -35,6 +35,7 @@ host			C executable and some demo scripts, mainly used
 			to test the firmware
 java/usbleds		usb leds java driver	
 java/buildmonitor	main program with the build monitor
+doc			additional files for documentation purposes
 
 See also the file CREDITS.
 
@@ -47,4 +48,3 @@ dream_cheeky:	Device mimics a DreamCheeky USB Mail Notifier device,
 h2. Future Plans
 
 TODO: add hardware spec./schematics, pcbs, etc.
-TODO: add some pictures of the devices I built
