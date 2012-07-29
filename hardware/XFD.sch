@@ -8,6 +8,8 @@ T 40500 48900 5 10 1 1 0 0 1
 refdes=CONN1
 T 40400 46700 5 10 1 1 0 0 1
 description=Connection to PICKit 2 programmer
+T 40400 46900 5 10 0 1 0 0 1
+footprint=JUMPER6
 }
 C 56300 47100 1 0 1 connector4-1.sym
 {
@@ -17,6 +19,8 @@ T 56300 48500 5 10 1 1 0 6 1
 refdes=CONN3
 T 55800 46900 5 10 1 1 0 0 1
 description=USB B-socket
+T 56300 47100 5 10 0 1 0 0 1
+footprint=HEADER4_2
 }
 C 56300 44600 1 0 1 connector4-1.sym
 {
@@ -26,6 +30,8 @@ T 56300 46000 5 10 1 1 0 6 1
 refdes=CONN2
 T 56300 44400 5 10 1 1 0 6 1
 description=To the traffic light
+T 56300 44600 5 10 0 1 0 0 1
+footprint=JUMPER4
 }
 N 54200 48200 54600 48200 4
 N 51300 48300 53300 48300 4
@@ -63,6 +69,8 @@ T 44700 47200 5 10 1 1 90 0 1
 refdes=R1
 T 44900 47500 5 10 1 1 90 0 1
 value=10k
+T 44900 47200 5 10 0 1 0 0 1
+footprint=R025
 }
 C 51300 45400 1 0 0 resistor-2.sym
 {
@@ -72,6 +80,8 @@ T 51500 45600 5 10 1 1 0 0 1
 refdes=R2
 T 51600 45400 5 10 1 1 0 0 1
 value=150
+T 51300 45400 5 10 0 1 0 0 1
+footprint=R025
 }
 C 51300 45000 1 0 0 resistor-2.sym
 {
@@ -81,6 +91,8 @@ T 51500 45200 5 10 1 1 0 0 1
 refdes=R3
 T 51600 45000 5 10 1 1 0 0 1
 value=150
+T 51300 45000 5 10 0 1 0 0 1
+footprint=R025
 }
 C 51300 44600 1 0 0 resistor-2.sym
 {
@@ -90,6 +102,8 @@ T 51500 44800 5 10 1 1 0 0 1
 refdes=R4
 T 51600 44600 5 10 1 1 0 0 1
 value=150
+T 51300 44600 5 10 0 1 0 0 1
+footprint=R025
 }
 C 51300 46900 1 0 0 capacitor-1.sym
 {
@@ -101,6 +115,8 @@ T 51500 47800 5 10 0 0 0 0 1
 symversion=0.1
 T 51800 46900 5 10 1 1 0 0 1
 value=100n
+T 51300 46900 5 10 0 1 0 0 1
+footprint=ACY300
 }
 C 47800 49100 1 0 0 capacitor-1.sym
 {
@@ -112,6 +128,8 @@ T 48000 50000 5 10 0 0 0 0 1
 symversion=0.1
 T 48300 49100 5 10 1 1 0 0 1
 value=100n
+T 47800 49100 5 10 0 1 0 0 1
+footprint=ACY300
 }
 C 45000 44300 1 0 0 pic18F13K50-1.sym
 {
@@ -148,6 +166,10 @@ T 44300 47800 5 10 1 1 180 0 1
 refdes=U2
 T 43800 47600 5 10 0 0 90 0 1
 symversion=0.1
+T 44500 47400 5 10 0 1 0 0 1
+footprint=R025
+T 44200 48200 5 10 1 1 0 0 1
+value=12MHz
 }
 C 43300 47800 1 0 0 capacitor-1.sym
 {
@@ -159,6 +181,8 @@ T 43500 48700 5 10 0 0 0 0 1
 symversion=0.1
 T 43800 48100 5 10 1 1 0 0 1
 value=15p
+T 43300 47800 5 10 0 0 0 0 1
+footprint=ACY300
 }
 C 43300 47300 1 0 0 capacitor-1.sym
 {
@@ -170,6 +194,8 @@ T 43500 48200 5 10 0 0 0 0 1
 symversion=0.1
 T 43800 47300 5 10 1 1 0 0 1
 value=15p
+T 43300 47300 5 10 0 1 0 0 1
+footprint=ACY300
 }
 N 42100 48000 43300 48000 4
 N 43300 48000 43300 47500 4
