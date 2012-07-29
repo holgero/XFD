@@ -43,10 +43,10 @@ schematic		schematics for the device hardware, XFD.sch is the
 See also the file CREDITS.
 
 Branches:
-master:		Main branch, based on PIC18F2450, configurable VID:PID
+master:		main branch, uses PIC18F13K50, configurable VID:PID
+18f2550:	based on PIC18F2550, configurable VID:PID
 dream_cheeky:	Device mimics a DreamCheeky USB Mail Notifier device,
 		VID:PID is 1d34:0004
-18f13k50:	uses PIC18F13K50, configurable VID:PID
 
 h2. Future Plans
 
