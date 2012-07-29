@@ -42,8 +42,6 @@ See also the file CREDITS.
 Branches:
 master:		main branch, uses PIC18F13K50, configurable VID:PID
 18f2550:	based on PIC18F2550, configurable VID:PID
-dream_cheeky:	Device mimics a DreamCheeky USB Mail Notifier device,
-		VID:PID is 1d34:0004
 
 h2. Future Plans
 
