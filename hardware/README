@@ -1,0 +1,3 @@
+The schematic for the device hardware is in the file XFD.sch. This is 
+a source file for gschem (see http://www.geda-project.org/). It is also
+exported as a JPEG in XFD.jpeg.

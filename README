@@ -31,14 +31,11 @@ h2. Contents
 
 Directories:
 device			firmware for the microcontroller
-host			C executable and some demo scripts, mainly used
-			to test the firmware
+host			C++ executable and some demo scripts, mainly used
+			to test the hardware and firmware
 java/usbleds		usb leds java driver	
 java/buildmonitor	main program with the build monitor
-doc			additional files for documentation purposes
-schematic		schematics for the device hardware, XFD.sch is the
-			source file for gschem (http://www.geda-project.org/)
-			view XFD.jpeg if you do not have gEda/gschem.
+hardware		device hardware
 
 See also the file CREDITS.
 
