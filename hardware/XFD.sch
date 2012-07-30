@@ -20,7 +20,7 @@ refdes=CONN3
 T 55800 46900 5 10 1 1 0 0 1
 description=USB B-socket
 T 56300 47100 5 10 0 1 0 0 1
-footprint=HEADER4_2
+footprint=USB-B
 }
 C 56300 44600 1 0 1 connector4-1.sym
 {
