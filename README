@@ -42,7 +42,3 @@ See also the file CREDITS.
 Branches:
 master:		main branch, uses PIC18F13K50, configurable VID:PID
 18f2550:	based on PIC18F2550, configurable VID:PID
-
-h2. Future Plans
-
-TODO: add hardware spec., pcbs
