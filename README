@@ -7,16 +7,14 @@ three LEDs mimicing a traffic light). The host runs a java program that
 polls the CI build server and tells the microcontroller via usb which
 LED(s) to light.
 
+The device has its own official USB address (0x1d50:0x6039), thanks
+to Openmoko Inc. (see
+http://wiki.openmoko.org/wiki/USB_Product_IDs#USB_Vendor_and_Product_IDs ).
+
 h2. Building
 
 To build: Run make in the top level directory as this:
-$ make VID=<vid> PID=<pid>
-Where <vid> is the vendor id and pid is the product id you want to use for
-your device in hexadecimal without a leading "0x".
-Example: $ make VID=0A0A PID=A0A0
-(I am trying to obtain my own VID:PID combination for this device,
-but had no success so far. As soon as I have a valid address, the build step
-will become somewhat simpler.)
+$ make
 
 Needs to compile: make, gcc++, javac, maven, gputils
 Needs at runtime: java, usblib (on linux), HID.DLL (on windows).
@@ -26,6 +24,8 @@ buildmonitor/target named buildmonitor-*-jar-with-dependencies.jar. Use
 it with a command line like this:
 
 $ java -jar buildmonitor-*-jar-with-dependencies.jar http://jenkins.my.domain:8080/view/BuildViewToWatch
+
+You will find the firmware under device/XFD.hex, flash your PIC with it.
 
 h2. Contents
 
@@ -40,5 +40,6 @@ hardware		device hardware
 See also the file CREDITS.
 
 Branches:
-master:		main branch, uses PIC18F13K50, configurable VID:PID
-18f2550:	based on PIC18F2550, configurable VID:PID
+master:		main branch, uses PIC18F13K50
+18f2550:	a secondary branch, based on PIC18F2550, mostly for reference
+		and for sentimental reasons (I started in this branch).

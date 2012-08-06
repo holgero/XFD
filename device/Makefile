@@ -19,7 +19,7 @@
 OBJECTS=usb.o wait.o main.o
 
 %.o : %.asm
-	gpasm -c -p p18f13k50 -r dec -w 2 --define VID=0x$(VID) --define PID=0x$(PID) $<
+	gpasm -c -p p18f13k50 -r dec -w 2 $<
 
 all: XFD.hex
 

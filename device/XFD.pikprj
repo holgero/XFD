@@ -1,7 +1,6 @@
 [Assembler]
 include-dir=/home/holger/Elektronik/MicroController/PikDev/XFD
 list=false
-other-options=--define VID=0x04D8 --define PID=0xFF0C
 radix=dec
 target-device=p18f13k50
 warn-level=2
