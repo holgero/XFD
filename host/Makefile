@@ -24,7 +24,7 @@ SRC = main.cpp USBLeds.cpp USBLeds.hpp LED.cpp LED.hpp
 all: usbleds
 
 usbleds: $(SRC)
-	$(CC) $(CFLAGS) -o usbleds $+ -DVID=0x$(VID) -DPID=0x$(PID) $(LIBS)
+	$(CC) $(CFLAGS) -o usbleds $+ $(LIBS)
 
 clean:
 	rm -f usbleds

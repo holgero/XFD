@@ -27,8 +27,8 @@
 #include "LED.hpp"
 
 #define ENDPOINT 0x81
-#define ID_VENDOR VID
-#define ID_PRODUCT PID
+#define ID_VENDOR 0x1d50
+#define ID_PRODUCT 0x6039
 
 class USBLeds {
 public:

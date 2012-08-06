@@ -18,10 +18,7 @@
 package de.holger_oehm.usb.leds;
 
 import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
-import java.util.Properties;
 
 import de.holger_oehm.usb.hid.HiDevice;
 import de.holger_oehm.usb.hid.HiDeviceException.HIDDeviceNotFoundException;
@@ -30,23 +27,7 @@ import de.holger_oehm.usb.hid.USBAddress;
 
 public interface USBLeds extends Closeable {
     public static final class Factory {
-        private static final USBAddress USBLEDS;
-        static {
-            final InputStream addressPropertiesInputStream = USBLeds.class.getClassLoader().getResourceAsStream(
-                    "address.properties");
-            try {
-                try {
-                    final Properties properties = new Properties();
-                    properties.load(addressPropertiesInputStream);
-                    USBLEDS = new USBAddress(Integer.parseInt(properties.getProperty("vendor.id"), 16), Integer.parseInt(
-                            properties.getProperty("product.id"), 16));
-                } finally {
-                    addressPropertiesInputStream.close();
-                }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        private static final USBAddress USBLEDS = new USBAddress(0x1d50, 0x6039);
         private static final USBAddress DREAM_CHEEKY = new USBAddress(0x1d34, 0x0004);
 
         private static final class LedDevicesIterator implements Iterator<USBLeds> {

@@ -17,6 +17,8 @@ T 40500 48900 5 10 1 1 0 0 1
 refdes=CONN1
 T 40400 46700 5 10 1 1 0 0 1
 description=Connection to PICKit 2 programmer
+T 40400 46900 5 10 0 1 0 0 1
+footprint=JUMPER6
 }
 C 56200 44300 1 0 1 connector4-1.sym
 {
@@ -26,6 +28,8 @@ T 56200 45700 5 10 1 1 0 6 1
 refdes=CONN3
 T 55700 44100 5 10 1 1 0 0 1
 description=USB B-socket
+T 56300 47100 5 10 0 1 0 0 1
+footprint=USB-B
 }
 C 40400 44700 1 0 0 connector4-1.sym
 {
@@ -35,6 +39,8 @@ T 40400 46100 5 10 1 1 0 0 1
 refdes=CONN2
 T 40400 44500 5 10 1 1 0 0 1
 description=To the traffic light
+T 56300 44600 5 10 0 1 0 0 1
+footprint=JUMPER4
 }
 N 52400 45400 54500 45400 4
 N 52400 45000 53300 45000 4
@@ -87,6 +93,8 @@ T 44900 48800 5 10 1 1 90 0 1
 refdes=R1
 T 45200 48900 5 10 1 1 90 0 1
 value=10k
+T 44900 47200 5 10 0 1 0 0 1
+footprint=R025
 }
 C 45000 48100 1 0 0 resistor-2.sym
 {
@@ -96,6 +104,8 @@ T 45200 48300 5 10 1 1 0 0 1
 refdes=R2
 T 45300 48100 5 10 1 1 0 0 1
 value=150
+T 51300 45400 5 10 0 1 0 0 1
+footprint=R025
 }
 N 45100 50800 45100 49500 4
 N 43600 48200 45000 48200 4
@@ -109,6 +119,8 @@ T 45200 47900 5 10 1 1 0 0 1
 refdes=R3
 T 45300 47700 5 10 1 1 0 0 1
 value=150
+T 51300 45000 5 10 0 1 0 0 1
+footprint=R025
 }
 C 45000 47300 1 0 0 resistor-2.sym
 {
@@ -118,6 +130,8 @@ T 45200 47500 5 10 1 1 0 0 1
 refdes=R4
 T 45300 47300 5 10 1 1 0 0 1
 value=150
+T 51300 44600 5 10 0 1 0 0 1
+footprint=R025
 }
 C 45000 43200 1 0 0 capacitor-1.sym
 {
@@ -129,6 +143,8 @@ T 45200 44100 5 10 0 0 0 0 1
 symversion=0.1
 T 45500 43200 5 10 1 1 0 0 1
 value=100n
+T 51300 46900 5 10 0 1 0 0 1
+footprint=ACY300
 }
 C 53300 45700 1 0 0 capacitor-1.sym
 {
@@ -140,6 +156,8 @@ T 53500 46600 5 10 0 0 0 0 1
 symversion=0.1
 T 53800 45700 5 10 1 1 0 0 1
 value=100n
+T 47800 49100 5 10 0 1 0 0 1
+footprint=ACY300
 }
 N 45000 43400 43000 43400 4
 C 43800 44200 1 0 0 crystal-1.sym
@@ -150,6 +168,8 @@ T 44000 44500 5 10 1 1 0 0 1
 refdes=U2
 T 44000 44900 5 10 0 0 0 0 1
 symversion=0.1
+T 44500 47400 5 10 0 1 0 0 1
+footprint=R025
 T 43800 44100 5 10 1 1 0 0 1
 value=20MHz
 }
@@ -163,6 +183,7 @@ T 42800 43600 5 10 0 0 90 0 1
 symversion=0.1
 T 43800 43500 5 10 1 1 90 0 1
 value=15pF
+footprint=ACY300
 }
 C 45000 43400 1 90 0 capacitor-1.sym
 {
@@ -174,6 +195,7 @@ T 44100 43600 5 10 0 0 90 0 1
 symversion=0.1
 T 45000 43900 5 10 1 1 90 0 1
 value=15pF
+footprint=ACY300
 }
 N 43500 44300 43800 44300 4
 N 44500 44300 44800 44300 4
