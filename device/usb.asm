@@ -37,6 +37,7 @@
 	global	InitUSB
 	global	ServiceUSB
 	global	WaitConfiguredUSB
+	global	enableUSBInterrupts
 
 ;**************************************************************
 ; exported variables
@@ -331,24 +332,41 @@ InitUSB
 	return
 
 ServiceUSB
+	; this routine mostly only resets the USB interrupt bits
+	; only URSTIF (usb reset) and TRNIF (usb transaction complete) trigger 
+	; special actions
 	banksel	UEIR
 	btfsc	UIR, UERRIF, ACCESS
-	clrf		UEIR, BANKED
+	clrf	UEIR, BANKED
+
 	btfsc	UIR, SOFIF, ACCESS
-	bcf		UIR, SOFIF, ACCESS
+	bcf	UIR, SOFIF, ACCESS
+
 	btfsc	UIR, IDLEIF, ACCESS
-	bcf		UIR, IDLEIF, ACCESS
-	btfss	UIR, ACTVIF, ACCESS
-	goto	serviceUsbActvifNotSet
-	bcf		UIR, ACTVIF, ACCESS
-	bcf		UCON, SUSPND, ACCESS
-serviceUsbActvifNotSet
+	bcf	UIR, IDLEIF, ACCESS
+
+	btfsc	UIR, ACTVIF, ACCESS
+	call	clearActivityBit
+
 	btfsc	UIR, STALLIF, ACCESS
-	bcf		UIR, STALLIF, ACCESS
+	bcf	UIR, STALLIF, ACCESS
+
 	btfsc	UIR, URSTIF, ACCESS
 	goto	resetUSB
-	btfsc	UIR, TRNIF, ACCESS		; no USB transaction complete
+
+	btfsc	UIR, TRNIF, ACCESS
+	; USB transaction complete, process it
 	goto	processUSBTransaction
+
+	return
+
+
+clearActivityBit
+	bcf	UCON, SUSPND, ACCESS
+clearActivityBitLoop
+	bcf	UIR, ACTVIF, ACCESS
+	btfsc	UIR, ACTVIF, ACCESS
+	goto	clearActivityBitLoop
 	return
 
 resetUSB
@@ -1085,6 +1103,12 @@ WaitConfiguredUSB
 	clrf	LED_states+2, BANKED
 	clrf	LED_states+3, BANKED
 	clrf	LED_states+4, BANKED
+	return
+
+enableUSBInterrupts
+;	movlw	( 1 << URSTIE ) || ( 1 << TRNIE )
+	movlw	0xFF		; switch all interrupts on
+	movwf	UIE, ACCESS
 	return
 
 			END
