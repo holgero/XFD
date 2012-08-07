@@ -31,7 +31,6 @@
 ;**************************************************************
 
 
-
 ;**************************************************************
 ; exported subroutines
 	global	InitUSB
@@ -189,93 +188,46 @@ decriptorAddressCalculated
 Descriptor_begin
 Device
 db	0x12, DEVICE			; bLength, bDescriptorType
-db	0x10, 0x01			; bcdUSB (low byte), bcdUSB (high byte)
-db	0x00, 0x00			; bDeviceClass, bDeviceSubClass
+db	0x10, 0x01			; low(bcdUSB), high(bcdUSB)
+db	0xFF, 0x00			; bDeviceClass, bDeviceSubClass
 db	0x00, 0x08			; bDeviceProtocl, bMaxPacketSize
-db	0x50, 0x1d			; idVendor (low byte), idVendor (high byte)
-db	0x39, 0x60			; idProduct (low byte), idProduct (high byte)
-db	0x01, 0x00			; bcdDevice (low byte), bcdDevice (high byte)
+db	0x50, 0x1d			; low(idVendor), high(idVendor)
+db	0x39, 0x60			; low(idProduct), high(idProduct)
+db	0x01, 0x00			; low(bcdDevice), high(bcdDevice)
 db	0x01, 0x02			; iManufacturer, iProduct
 db	0x00, NUM_CONFIGURATIONS	; iSerialNumber (none), bNumConfigurations
+
 Configuration1
 db	0x09, CONFIGURATION		; bLength, bDescriptorType
-db	0x22, 0x00			; wTotalLength (low byte), wTotalLength (high byte)
+db	0x19, 0x00			; low(wTotalLength), high(wTotalLength)
 db	NUM_INTERFACES, 0x01		; bNumInterfaces, bConfigurationValue
-db	0x00, 0xA0			; iConfiguration (none), bmAttributes
+db	0x00, 0x80			; iConfiguration (none), bmAttributes
 db	0x32, 0x09			; bMaxPower (100 mA), interface1: blength
 db	INTERFACE, 0x00			; INTERFACE, 0x00
 db	0x00, 0x01			; bAlternateSetting, bNumEndpoints (excluding EP0)
-db	0x03, 0x00		; bInterfaceClass (HID code), bInterfaceSubClass (no subclass)
-db	0x00, 0x00		; bInterfaceProtocol (none), iInterface (none)
-HID1
-db	0x09, HID			; bLength, bDescriptorType
-db	0x00, 0x01			; bcdHID (low byte), bcdHID (high byte)
-db	0x00, 0x01			; bCountryCode (none), bNumDescriptors
-
-
-;db	REPORT, String0 - Report1	; bDescriptorType, wDescriptorLength (low byte)
-#define REPORT_DESCRIPTOR_LENGTH	0x53
-db	REPORT, REPORT_DESCRIPTOR_LENGTH; hard coded length because of padding
-db	0x00, 0x07			; wDescriptorLength (high byte), bLength (Endpoint1 descriptor starts here)
-db	ENDPOINT, 0x81			; bDescriptorType, bEndpointAddress (EP1 IN)
-db	0x03, 0x08			; bmAttributes (Interrupt), wMaxPacketSize (low byte)
-db	0x00, 0x0A			; wMaxPacketSize (high byte), bInterval (10 ms)
-
-oneLedUsage	macro	usageType
-db	0x05, 0x08			; Usage Page (LEDs),
-db	0x09, usageType			; Usage (usageType),
-db	0x91, 0x02			; Output (Data, Variable, Absolute),  ; LED report
-db	0x95, 0x01			; Report Count (1),
-db	0x75, 0x08			; Report Size (8),
-db	0x15, 0x00			; Logical Minimum (0),
-db	0x25, 0x01			; Logical Maximum (1),
-		endm
-
-Report1
-db	0x05, 0x0C			; Usage Page (Consumer),
-db	0x09, 0x01			; Usage (Consumer specific),
-db	0xA1, 0x01			; Collection (Application),
-	oneLedUsage	0x48		; red LED
-	oneLedUsage	0x4a		; amber LED (in fact it is yellow)
-	oneLedUsage	0x49		; green LED
-	oneLedUsage	0x4b		; generic indicator (blue LED)
-	oneLedUsage	0x4b		; generic indicator (white LED)
-db	0x91, 0x01			; Output(Constant) padding
-db	0x95, 0x03			; Report Count (3) -> pad total report to 8 bytes
-db	0x75, 0x08			; Report Size (8)
-db	0xC0				; End Collection
+db	0xFF, 0x00			; bInterfaceClass (vendor specific), bInterfaceSubClass (no subclass)
+db	0x00, 0x00			; bInterfaceProtocol (none), iInterface (none)
+db	0x07, ENDPOINT			; EP0: bLength, bDescriptorType
+db	0x81, 0x03			; bEndpointAddress (EP1 IN), bmAttributes (Interrupt)
+db	0x08, 0x00			; low(wMaxPacketSize), high(wMaxPacketSize)
+db	0x0A				; bInterval (10 ms)
 
 String0
 db	String1-String0, STRING		; bLength, bDescriptorType
-db	0x09, 0x04			; wLANGID[0] (low byte), wLANGID[0] (high byte)
+db	0x09, 0x04			; low(wLANGID[0]), high(wLANGID[0])
 String1
 db	String2-String1, STRING		; bLength, bDescriptorType
-db	'M', 0x00			; bString
-db	'i', 0x00
-db	'c', 0x00
-db	'r', 0x00
-db	'o', 0x00
-db	'c', 0x00
-db	'h', 0x00
-db	'i', 0x00
-db	'p', 0x00
-db	' ', 0x00
-db	'T', 0x00
-db	'e', 0x00
-db	'c', 0x00
-db	'h', 0x00
-db	'n', 0x00
+db	'H', 0x00			; bString
 db	'o', 0x00
 db	'l', 0x00
-db	'o', 0x00
 db	'g', 0x00
-db	'y', 0x00
-db	',', 0x00
+db	'e', 0x00
+db	'r', 0x00
 db	' ', 0x00
-db	'I', 0x00
-db	'n', 0x00
-db	'c', 0x00
-db	'.', 0x00
+db	'O', 0x00
+db	'e', 0x00
+db	'h', 0x00
+db	'm', 0x00
 String2
 db	Descriptor_end-String2, STRING	; bLength, bDescriptorType
 db	'X', 0x00			; bString
@@ -286,17 +238,6 @@ db	'v', 0x00
 db	'i', 0x00
 db	'c', 0x00
 db	'e', 0x00
-db	' ', 0x00
-db	'P', 0x00
-db	'I', 0x00
-db	'C', 0x00
-db	'1', 0x00
-db	'8', 0x00
-db	'F', 0x00
-db	'2', 0x00
-db	'5', 0x00
-db	'5', 0x00
-db	'0', 0x00
 Descriptor_end
 
 StringOffsetsTable
@@ -803,9 +744,7 @@ getDescriptorRequest
 	dispatchRequest	DEVICE, getDeviceDescriptorRequest
 	dispatchRequest	CONFIGURATION, getConfigurationDescriptorRequest
 	dispatchRequest	STRING, getStringDescriptorRequest
-	dispatchRequest	HID, getHidDescriptorRequest
-	dispatchRequest	REPORT, getReportDescriptorRequest
-	goto		standardRequestsError
+	goto	standardRequestsError
 
 getDeviceDescriptorRequest
 	movlw	low (Device-Descriptor_begin)
@@ -847,34 +786,6 @@ getValidStringDescriptorRequest		; allright string index <= 2
 	movwf	USB_desc_ptr, BANKED	; now retrieve the string descriptor itself
 	call	Descriptor		; get string descriptor length
 	movwf	USB_bytes_left, BANKED
-	goto	sendDescriptorRequestAnswer
-
-getHidDescriptorRequest
-	bcf	USB_error_flags, 0, BANKED
-	movf	USB_buffer_data+wValue, W, BANKED
-	btfsc	STATUS, Z, ACCESS	; skip if not zero
-	goto	getHidDescriptor0
-	bsf	USB_error_flags, 0, BANKED
-	goto	standardRequestsError
-getHidDescriptor0
-	movlw	low (HID1-Descriptor_begin)
-	movwf	USB_desc_ptr, BANKED
-	call	Descriptor		; get descriptor length
-	movwf	USB_bytes_left, BANKED
-	goto	sendDescriptorRequestAnswer
-
-getReportDescriptorRequest
-	bcf	USB_error_flags, 0, BANKED
-	movf	USB_buffer_data+wValue, W, BANKED
-	btfsc	STATUS, Z, ACCESS	; skip if not zero
-	goto	getReportDescriptor0
-	bsf	USB_error_flags, 0, BANKED
-	goto	standardRequestsError
-getReportDescriptor0
-	movlw	REPORT_DESCRIPTOR_LENGTH
-	movwf	USB_bytes_left, BANKED	; set descriptor length
-	movlw	low (Report1-Descriptor_begin)
-	movwf	USB_desc_ptr, BANKED
 	goto	sendDescriptorRequestAnswer
 
 classRequests
