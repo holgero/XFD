@@ -187,7 +187,7 @@ decriptorAddressCalculated
 Descriptor_begin
 Device
 db	0x12, DEVICE			; bLength, bDescriptorType
-db	0x10, 0x01			; low(bcdUSB), high(bcdUSB)
+db	0x00, 0x02			; low(bcdUSB), high(bcdUSB): 2.00
 db	0xFF, 0x00			; bDeviceClass, bDeviceSubClass
 db	0x00, 0x08			; bDeviceProtocl, bMaxPacketSize
 db	0x50, 0x1d			; low(idVendor), high(idVendor)
