@@ -508,6 +508,8 @@ vendorRequests
 	btfss	STATUS,Z,ACCESS		; skip if yes
 	goto	standardRequestsError	; something else
 ; we are to return a compatible id feature descriptor
+	movlw	GET_DESCRIPTOR
+	movwf	USB_dev_req, BANKED	; processing a GET_DESCRIPTOR request
 	movlw	low (CompatibleIdFeature-Descriptor_begin)
 	movwf	USB_desc_ptr, BANKED
 	call	Descriptor		; get descriptor length
