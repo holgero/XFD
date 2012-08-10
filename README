@@ -43,3 +43,5 @@ Branches:
 master:		main branch, uses PIC18F13K50
 18f2550:	a secondary branch, based on PIC18F2550, mostly for reference
 		and for sentimental reasons (I started in this branch).
+hid		a different approach to access the device under windows
+		claim to be a HID and use the windows api for those devices
