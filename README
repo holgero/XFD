@@ -19,13 +19,18 @@ $ make
 Needs to compile: make, gcc++, javac, maven, gputils
 Needs at runtime: java, usblib (on linux), HID.DLL (on windows).
 
-If all goes well the main result will be a jar file under
-buildmonitor/target named buildmonitor-*-jar-with-dependencies.jar. Use
-it with a command line like this:
+You will find the firmware under device/XFD.hex, flash your PIC with it.
+
+The program for your host will be a jar file under buildmonitor/target
+named buildmonitor-*-jar-with-dependencies.jar. Start it with a command
+line like this:
 
 $ java -jar buildmonitor-*-jar-with-dependencies.jar http://jenkins.my.domain:8080/view/BuildViewToWatch
 
-You will find the firmware under device/XFD.hex, flash your PIC with it.
+Note: On Windows (before Windows 8) you need to install the WinUSB driver
+for generic USB devices once before you can use it. You can use Zadig
+(https://github.com/pbatard/libwdi/wiki/Zadig) for that purpose.
+
 
 h2. Contents
 
@@ -43,4 +48,5 @@ Branches:
 master:		main branch, uses PIC18F13K50
 18f2550:	a secondary branch, based on PIC18F2550, mostly for reference
 		and for sentimental reasons (I started in this branch).
-noHid		experimental branch, try to get rid of HID device class
+hid		a different approach to access the device on windows:
+		it is declared as a HID and accessed with the HID.DLL
