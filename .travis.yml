@@ -2,4 +2,4 @@ language: c
 script: make
 before_install:
  - sudo apt-get install gputils
- - sudo apt-get install libusb-dev libusb-0.1-4
+ - sudo apt-get install libusb-dev
