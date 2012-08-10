@@ -33,10 +33,7 @@ of my device.
 
 Files located in the java folder.
 
-I found the method how to communicate with USB devices on windows at
-http://www.blog.kslemb.com/doku.php/en/projects/globx/java_hid .
-
-I didn't like the example code on that site, so I wrote my own version of the
-same algorithm. It turned out that I only needed the wrapper for the HID.DLL,
-the other libraries used in the algorithm were already present in the
-platform.jar provided by JNA.
+The two binary files libusb-1.0-win32.dll and libusb-1.0-win64.dll are
+copied from the project http://libusbx.org/. I downloaded 
+http://sourceforge.net/projects/libusbx/files/releases/1.0.12/Windows/libusbx-1.0.12-win.7z/download
+and copied the files /MS32/dll/libusb-1.0.dll and /MS64/dll/libusb-1.0.dll.
