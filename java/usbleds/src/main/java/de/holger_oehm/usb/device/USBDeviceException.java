@@ -15,17 +15,17 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.holger_oehm.usb.hid;
+package de.holger_oehm.usb.device;
 
-public class HiDeviceException extends RuntimeException {
+public class USBDeviceException extends RuntimeException {
 
-	public static final class HIDDeviceNotFoundException extends HiDeviceException {
-		public HIDDeviceNotFoundException(final String message) {
+	public static final class USBDeviceNotFoundException extends USBDeviceException {
+		public USBDeviceNotFoundException(final String message) {
 			super(message);
 		}
 	}
 
-	public HiDeviceException(final String message) {
+	public USBDeviceException(final String message) {
 		super(message);
 	}
 }

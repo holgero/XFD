@@ -25,6 +25,7 @@
 	global	InitUSB
 	global	ServiceUSB
 	global	WaitConfiguredUSB
+	global	enableUSBInterrupts
 
 ;**************************************************************
 ; exported variables
@@ -75,11 +76,6 @@ STRING			EQU	3
 INTERFACE		EQU	4
 ENDPOINT		EQU	5
 
-; HID descriptor types
-HID			EQU	0x21
-REPORT			EQU	0x22
-PHYSICAL		EQU	0x23
-
 ; offsets into the setup data record
 bmRequestType		EQU	0x00
 bRequest		EQU	0x01
@@ -122,6 +118,10 @@ VENDOR			EQU	0x02 << 5
 RECIPIENT_DEVICE	EQU	0x00
 RECIPIENT_INTERFACE	EQU	0x01
 RECIPIENT_ENDPOINT	EQU	0x02
+
+; MS USB Extension Stuff
+I_EXTENSION_STRING	EQU	0xEE
+VENDOR_CODE		EQU	0x42
 
 ; request codes
 WAKEUP_REQUEST		EQU	0x01
@@ -172,95 +172,65 @@ decriptorAddressCalculated
 Descriptor_begin
 Device
 db	0x12, DEVICE			; bLength, bDescriptorType
-db	0x10, 0x01			; bcdUSB (low byte), bcdUSB (high byte)
-db	0x00, 0x00			; bDeviceClass, bDeviceSubClass
+db	0x00, 0x02			; low(bcdUSB), high(bcdUSB): 2.00
+db	0xFF, 0x00			; bDeviceClass, bDeviceSubClass
 db	0x00, 0x08			; bDeviceProtocl, bMaxPacketSize
-db	0x50, 0x1d			; idVendor (low byte), idVendor (high byte)
-db	0x39, 0x60			; idProduct (low byte), idProduct (high byte)
-db	0x01, 0x00			; bcdDevice (low byte), bcdDevice (high byte)
+db	0x50, 0x1d			; low(idVendor), high(idVendor)
+db	0x39, 0x60			; low(idProduct), high(idProduct)
+db	0x01, 0x00			; low(bcdDevice), high(bcdDevice)
 db	0x01, 0x02			; iManufacturer, iProduct
 db	0x00, NUM_CONFIGURATIONS	; iSerialNumber (none), bNumConfigurations
+
 Configuration1
 db	0x09, CONFIGURATION		; bLength, bDescriptorType
-db	0x22, 0x00			; wTotalLength (low byte), wTotalLength (high byte)
+db	0x19, 0x00			; low(wTotalLength), high(wTotalLength)
 db	NUM_INTERFACES, 0x01		; bNumInterfaces, bConfigurationValue
-db	0x00, 0xA0			; iConfiguration (none), bmAttributes
+db	0x00, 0x80			; iConfiguration (none), bmAttributes
 db	0x32, 0x09			; bMaxPower (100 mA), interface1: blength
 db	INTERFACE, 0x00			; INTERFACE, 0x00
 db	0x00, 0x01			; bAlternateSetting, bNumEndpoints (excluding EP0)
-db	0x03, 0x00		; bInterfaceClass (HID code), bInterfaceSubClass (no subclass)
-db	0x00, 0x00		; bInterfaceProtocol (none), iInterface (none)
-HID1
-db	0x09, HID			; bLength, bDescriptorType
-db	0x00, 0x01			; bcdHID (low byte), bcdHID (high byte)
-db	0x00, 0x01			; bCountryCode (none), bNumDescriptors
+db	0xFF, 0x00			; bInterfaceClass (vendor specific), bInterfaceSubClass (no subclass)
+db	0x00, 0x00			; bInterfaceProtocol (none), iInterface (none)
+db	0x07, ENDPOINT			; EP0: bLength, bDescriptorType
+db	0x81, 0x03			; bEndpointAddress (EP1 IN), bmAttributes (Interrupt)
+db	0x08, 0x00			; low(wMaxPacketSize), high(wMaxPacketSize)
+db	0x0A				; bInterval (10 ms)
 
-
-;db	REPORT, String0 - Report1	; bDescriptorType, wDescriptorLength (low byte)
-#define REPORT_DESCRIPTOR_LENGTH	0x53
-db	REPORT, REPORT_DESCRIPTOR_LENGTH; hard coded length because of padding
-db	0x00, 0x07			; wDescriptorLength (high byte), bLength (Endpoint1 descriptor starts here)
-db	ENDPOINT, 0x81			; bDescriptorType, bEndpointAddress (EP1 IN)
-db	0x03, 0x08			; bmAttributes (Interrupt), wMaxPacketSize (low byte)
-db	0x00, 0x0A			; wMaxPacketSize (high byte), bInterval (10 ms)
-
-oneLedUsage	macro	usageType
-db	0x05, 0x08			; Usage Page (LEDs),
-db	0x09, usageType			; Usage (usageType),
-db	0x91, 0x02			; Output (Data, Variable, Absolute),  ; LED report
-db	0x95, 0x01			; Report Count (1),
-db	0x75, 0x08			; Report Size (8),
-db	0x15, 0x00			; Logical Minimum (0),
-db	0x25, 0x01			; Logical Maximum (1),
-		endm
-
-Report1
-db	0x05, 0x0C			; Usage Page (Consumer),
-db	0x09, 0x01			; Usage (Consumer specific),
-db	0xA1, 0x01			; Collection (Application),
-	oneLedUsage	0x48		; red LED
-	oneLedUsage	0x4a		; amber LED (in fact it is yellow)
-	oneLedUsage	0x49		; green LED
-	oneLedUsage	0x4b		; generic indicator (blue LED)
-	oneLedUsage	0x4b		; generic indicator (white LED)
-db	0x91, 0x01			; Output(Constant) padding
-db	0x95, 0x03			; Report Count (3) -> pad total report to 8 bytes
-db	0x75, 0x08			; Report Size (8)
-db	0xC0				; End Collection
+CompatibleIdFeature                     ; MS extension
+db	0x28, 0x00			; low(descriptorLength), high(descriptorLength)
+db	0x00, 0x00			; more lenght bytes, set to 0
+db	0x00, 0x01			; bcd version ('1.0')
+db	0x04, 0x00			; Compatibility ID Descriptor index (0x0004)
+db	0x01, 0x00			; Number of sections (1), reserved
+db	0x00, 0x00
+db	0x00, 0x00
+db	0x00, 0x00			; 6 reserved bytes
+db	0x00, 0x01			; Interface Number (Interface #0), Reserved
+db	'W', 'I', 'N', 'U', 'S', 'B'	; "WINUSB"
+db	0x00, 0x00			; "\0\0"
+db	0x00, 0x00, 0x00, 0x00
+db	0x00, 0x00, 0x00, 0x00		; Sub-Compatible ID (unused)
+db	0x00, 0x00, 0x00, 0x00
+db	0x00, 0x00			; Reserved 
 
 String0
 db	String1-String0, STRING		; bLength, bDescriptorType
-db	0x09, 0x04			; wLANGID[0] (low byte), wLANGID[0] (high byte)
+db	0x09, 0x04			; wLANGID[0]=0x0409: English (US)
 String1
 db	String2-String1, STRING		; bLength, bDescriptorType
-db	'M', 0x00			; bString
-db	'i', 0x00
-db	'c', 0x00
-db	'r', 0x00
-db	'o', 0x00
-db	'c', 0x00
-db	'h', 0x00
-db	'i', 0x00
-db	'p', 0x00
-db	' ', 0x00
-db	'T', 0x00
-db	'e', 0x00
-db	'c', 0x00
-db	'h', 0x00
-db	'n', 0x00
+db	'H', 0x00			; bString
 db	'o', 0x00
 db	'l', 0x00
-db	'o', 0x00
 db	'g', 0x00
-db	'y', 0x00
-db	',', 0x00
+db	'e', 0x00
+db	'r', 0x00
 db	' ', 0x00
-db	'I', 0x00
-db	'n', 0x00
-db	'c', 0x00
-db	'.', 0x00
+db	'O', 0x00
+db	'e', 0x00
+db	'h', 0x00
+db	'm', 0x00
 String2
-db	Descriptor_end-String2, STRING	; bLength, bDescriptorType
+db	StringEE-String2, STRING	; bLength, bDescriptorType
 db	'X', 0x00			; bString
 db	'F', 0x00
 db	'D', 0x00
@@ -269,22 +239,21 @@ db	'v', 0x00
 db	'i', 0x00
 db	'c', 0x00
 db	'e', 0x00
-db	' ', 0x00
-db	'P', 0x00
-db	'I', 0x00
-db	'C', 0x00
-db	'1', 0x00
-db	'8', 0x00
+StringEE				; special string to enable ms extensions
+db	Descriptor_end-StringEE, STRING	; bLength, bDescriptorType=STRING
+db	'M', 0x00
+db	'S', 0x00
 db	'F', 0x00
-db	'2', 0x00
-db	'5', 0x00
-db	'5', 0x00
+db	'T', 0x00
+db	'1', 0x00
 db	'0', 0x00
+db	'0', 0x00
+db	VENDOR_CODE, 0x00		; Vendor Code, padding
 Descriptor_end
 
 StringOffsetsTable
 db	String0 - Descriptor_begin, String1 - Descriptor_begin
-db	String2 - Descriptor_begin
+db	String2 - Descriptor_begin, StringEE - Descriptor_begin
 
 InitUSB
 	clrf	UIE, ACCESS		; mask all USB interrupts
@@ -306,23 +275,40 @@ InitUSB
 	return
 
 ServiceUSB
+	; this routine mostly only resets the USB interrupt bits
+	; only URSTIF (usb reset) and TRNIF (usb transaction complete) trigger 
+	; special actions
 	btfsc	UIR, UERRIF, ACCESS
-	clrf		UEIR, ACCESS
+	clrf	UEIR, BANKED
+
 	btfsc	UIR, SOFIF, ACCESS
-	bcf		UIR, SOFIF, ACCESS
+	bcf	UIR, SOFIF, ACCESS
+
 	btfsc	UIR, IDLEIF, ACCESS
-	bcf		UIR, IDLEIF, ACCESS
-	btfss	UIR, ACTVIF, ACCESS
-	goto	serviceUsbActvifNotSet
-	bcf		UIR, ACTVIF, ACCESS
-	bcf		UCON, SUSPND, ACCESS
-serviceUsbActvifNotSet
+	bcf	UIR, IDLEIF, ACCESS
+
+	btfsc	UIR, ACTVIF, ACCESS
+	call	clearActivityBit
+
 	btfsc	UIR, STALLIF, ACCESS
-	bcf		UIR, STALLIF, ACCESS
+	bcf	UIR, STALLIF, ACCESS
+
 	btfsc	UIR, URSTIF, ACCESS
 	goto	resetUSB
-	btfsc	UIR, TRNIF, ACCESS		; no USB transaction complete
+
+	btfsc	UIR, TRNIF, ACCESS
+	; USB transaction complete, process it
 	goto	processUSBTransaction
+
+	return
+
+
+clearActivityBit
+	bcf	UCON, SUSPND, ACCESS
+clearActivityBitLoop
+	bcf	UIR, ACTVIF, ACCESS
+	btfsc	UIR, ACTVIF, ACCESS
+	goto	clearActivityBitLoop
 	return
 
 resetUSB
@@ -412,56 +398,57 @@ processUSBTransaction
 	return
 
 processSetupToken
-	banksel		USB_buffer_data
-	movf		USB_buffer_desc+ADDRESSH, W, BANKED
-	movwf		FSR0H, ACCESS
-	movf		USB_buffer_desc+ADDRESSL, W, BANKED
-	movwf		FSR0L, ACCESS
-	movf		POSTINC0, W
-	movwf		USB_buffer_data, BANKED
-	movf		POSTINC0, W
-	movwf		USB_buffer_data+1, BANKED
-	movf		POSTINC0, W
-	movwf		USB_buffer_data+2, BANKED
-	movf		POSTINC0, W
-	movwf		USB_buffer_data+3, BANKED
-	movf		POSTINC0, W
-	movwf		USB_buffer_data+4, BANKED
-	movf		POSTINC0, W
-	movwf		USB_buffer_data+5, BANKED
-	movf		POSTINC0, W
-	movwf		USB_buffer_data+6, BANKED
-	movf		POSTINC0, W
-	movwf		USB_buffer_data+7, BANKED
-	banksel		BD0CNT
-	movlw		0x08
-	movwf		BD0CNT, BANKED		; reset the byte count
-	movwf		BD1STAT, BANKED		; return the in buffer to us (dequeue any pending requests)
-	banksel		USB_buffer_data+bmRequestType
-	movf		USB_buffer_data+bmRequestType,W,BANKED
-	sublw		HID_SET_REPORT
-	btfss		STATUS,Z,ACCESS		; skip if request type is HID_SET_REPORT
-	goto		setupTokenOtherRequestTypes
-	movlw		0xC8
-	goto		setupTokenAllRequestTypes
+	banksel	USB_buffer_data
+	movf	USB_buffer_desc+ADDRESSH, W, BANKED
+	movwf	FSR0H, ACCESS
+	movf	USB_buffer_desc+ADDRESSL, W, BANKED
+	movwf	FSR0L, ACCESS
+	movf	POSTINC0, W
+	movwf	USB_buffer_data, BANKED
+	movf	POSTINC0, W
+	movwf	USB_buffer_data+1, BANKED
+	movf	POSTINC0, W
+	movwf	USB_buffer_data+2, BANKED
+	movf	POSTINC0, W
+	movwf	USB_buffer_data+3, BANKED
+	movf	POSTINC0, W
+	movwf	USB_buffer_data+4, BANKED
+	movf	POSTINC0, W
+	movwf	USB_buffer_data+5, BANKED
+	movf	POSTINC0, W
+	movwf	USB_buffer_data+6, BANKED
+	movf	POSTINC0, W
+	movwf	USB_buffer_data+7, BANKED
+	banksel	BD0CNT
+	movlw	0x08
+	movwf	BD0CNT, BANKED		; reset the byte count
+	movwf	BD1STAT, BANKED		; return the in buffer to us
+					; (dequeue any pending requests)
+	banksel	USB_buffer_data+bmRequestType
+	movf	USB_buffer_data+bmRequestType,W,BANKED
+	sublw	HID_SET_REPORT
+	btfss	STATUS,Z,ACCESS		; skip if request type is HID_SET_REPORT
+	goto	setupTokenOtherRequestTypes
+	movlw	0xC8
+	goto	setupTokenAllRequestTypes
 setupTokenOtherRequestTypes
-	movlw		0x88
+	movlw	0x88
 setupTokenAllRequestTypes
-	banksel		BD0STAT
-	movwf		BD0STAT, BANKED	; set EP0 OUT UOWN back to USB and DATA0/DATA1 packet according to request type
-	bcf		UCON, PKTDIS, ACCESS	; assuming there is nothing to dequeue, clear the packet disable bit
-	banksel		USB_dev_req
-	movlw		NO_REQUEST
-	movwf		USB_dev_req, BANKED			; clear the device request in process
-	movf		USB_buffer_data+bmRequestType, W, BANKED
-	andlw		0x60					; extract request type bits
+	banksel	BD0STAT
+	movwf	BD0STAT, BANKED	; set EP0 OUT UOWN back to USB and DATA0/DATA1 packet according to request type
+	bcf	UCON, PKTDIS, ACCESS	; assuming there is nothing to dequeue, clear the packet disable bit
+	banksel	USB_dev_req
+	movlw	NO_REQUEST
+	movwf	USB_dev_req, BANKED			; clear the device request in process
+	movf	USB_buffer_data+bmRequestType, W, BANKED
+	andlw	0x60					; extract request type bits
 	dispatchRequest	STANDARD, standardRequests
 	dispatchRequest	CLASS, classRequests
 	dispatchRequest	VENDOR, vendorRequests
-	goto		standardRequestsError
+	goto	standardRequestsError
 
 standardRequests
-	movf		USB_buffer_data+bRequest, W, BANKED
+	movf	USB_buffer_data+bRequest, W, BANKED
 	dispatchRequest	GET_STATUS, getStatusRequest
 	dispatchRequest	CLEAR_FEATURE, setFeatureRequest
 	dispatchRequest	SET_FEATURE, setFeatureRequest
@@ -473,6 +460,23 @@ standardRequests
 	dispatchRequest	SET_INTERFACE, setInterfaceRequest
 
 vendorRequests
+	movf	USB_buffer_data+bRequest, W, BANKED
+	sublw	VENDOR_CODE		; our vendor code?
+	btfss	STATUS,Z,ACCESS		; skip if yes
+	goto	standardRequestsError	; something else
+	movf	USB_buffer_data+wIndex, W, BANKED
+	sublw	0x04			; special feature request index?
+	btfss	STATUS,Z,ACCESS		; skip if yes
+	goto	standardRequestsError	; something else
+; we are to return a compatible id feature descriptor
+	movlw	GET_DESCRIPTOR
+	movwf	USB_dev_req, BANKED	; processing a GET_DESCRIPTOR request
+	movlw	low (CompatibleIdFeature-Descriptor_begin)
+	movwf	USB_desc_ptr, BANKED
+	call	Descriptor		; get descriptor length
+	movwf	USB_bytes_left, BANKED
+	goto	sendDescriptorRequestAnswer
+
 standardRequestsError
 	bsf		UEP0, EPSTALL, ACCESS	; set EP0 protocol stall bit to signify Request Error
 	return
@@ -736,9 +740,7 @@ getDescriptorRequest
 	dispatchRequest	DEVICE, getDeviceDescriptorRequest
 	dispatchRequest	CONFIGURATION, getConfigurationDescriptorRequest
 	dispatchRequest	STRING, getStringDescriptorRequest
-	dispatchRequest	HID, getHidDescriptorRequest
-	dispatchRequest	REPORT, getReportDescriptorRequest
-	goto		standardRequestsError
+	goto	standardRequestsError
 
 getDeviceDescriptorRequest
 	movlw	low (Device-Descriptor_begin)
@@ -767,6 +769,15 @@ getConfigurationDescriptor0
 getStringDescriptorRequest
 	bcf	USB_error_flags, 0, BANKED
 	movf	USB_buffer_data+wValue, W, BANKED	; string no
+	sublw	I_EXTENSION_STRING	; MS extension: ask for string with special idx
+	btfsc	STATUS,Z,ACCESS		; skip if not Zero=it is a normal request
+	goto	specialStringDescriptorRequest
+	movf	USB_buffer_data+wValue, W, BANKED	; get string no again
+	goto	normalStringDescriptorRequest
+specialStringDescriptorRequest
+	movlw	3			; the real index of the special string
+	goto	sendBackStringWithIndex
+normalStringDescriptorRequest
 	sublw	2
 	btfsc	STATUS,C
 	goto	getValidStringDescriptorRequest
@@ -774,40 +785,13 @@ getStringDescriptorRequest
 	goto	standardRequestsError
 getValidStringDescriptorRequest		; allright string index <= 2
 	movf	USB_buffer_data+wValue, W, BANKED	; string no
+sendBackStringWithIndex
 	addlw	low (StringOffsetsTable - Descriptor_begin)
 	movwf	USB_desc_ptr, BANKED
 	call	Descriptor		; retrieve offset of requested string no
 	movwf	USB_desc_ptr, BANKED	; now retrieve the string descriptor itself
 	call	Descriptor		; get string descriptor length
 	movwf	USB_bytes_left, BANKED
-	goto	sendDescriptorRequestAnswer
-
-getHidDescriptorRequest
-	bcf	USB_error_flags, 0, BANKED
-	movf	USB_buffer_data+wValue, W, BANKED
-	btfsc	STATUS, Z, ACCESS	; skip if not zero
-	goto	getHidDescriptor0
-	bsf	USB_error_flags, 0, BANKED
-	goto	standardRequestsError
-getHidDescriptor0
-	movlw	low (HID1-Descriptor_begin)
-	movwf	USB_desc_ptr, BANKED
-	call	Descriptor		; get descriptor length
-	movwf	USB_bytes_left, BANKED
-	goto	sendDescriptorRequestAnswer
-
-getReportDescriptorRequest
-	bcf	USB_error_flags, 0, BANKED
-	movf	USB_buffer_data+wValue, W, BANKED
-	btfsc	STATUS, Z, ACCESS	; skip if not zero
-	goto	getReportDescriptor0
-	bsf	USB_error_flags, 0, BANKED
-	goto	standardRequestsError
-getReportDescriptor0
-	movlw	REPORT_DESCRIPTOR_LENGTH
-	movwf	USB_bytes_left, BANKED	; set descriptor length
-	movlw	low (Report1-Descriptor_begin)
-	movwf	USB_desc_ptr, BANKED
 	goto	sendDescriptorRequestAnswer
 
 classRequests
@@ -1026,6 +1010,12 @@ WaitConfiguredUSB
 	clrf	LED_states+2, BANKED
 	clrf	LED_states+3, BANKED
 	clrf	LED_states+4, BANKED
+	return
+
+enableUSBInterrupts
+;	movlw	( 1 << URSTIE ) || ( 1 << TRNIE )
+	movlw	0xFF		; switch all interrupts on
+	movwf	UIE, ACCESS
 	return
 
 			END

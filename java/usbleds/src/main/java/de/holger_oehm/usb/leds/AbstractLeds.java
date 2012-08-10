@@ -17,14 +17,14 @@
 
 package de.holger_oehm.usb.leds;
 
-import de.holger_oehm.usb.hid.HiDevice;
+import de.holger_oehm.usb.device.SimpleUSBDevice;
 
 abstract class AbstractLeds implements USBLeds {
     private final byte[] reportData = new byte[8];
 
-    private final HiDevice device;
+    private final SimpleUSBDevice device;
 
-    public AbstractLeds(final HiDevice device) {
+    public AbstractLeds(final SimpleUSBDevice device) {
         this.device = device;
     }
 
@@ -38,7 +38,7 @@ abstract class AbstractLeds implements USBLeds {
         reportData[0] = (byte) b1;
         reportData[1] = (byte) b2;
         reportData[2] = (byte) b3;
-        device.setReport(0, reportData);
+        device.setReport((short) 0, reportData);
     }
 
     protected final void setReportData(final int b1, final int b2, final int b3, final int b4, final int b5) {

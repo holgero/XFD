@@ -15,26 +15,29 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package de.holger_oehm.usb.hid;
+package de.holger_oehm.usb.device;
 
 import java.io.Closeable;
 
-public interface HiDevice extends Closeable {
+/**
+ * A simple usb device that accepts reports.
+ */
+public interface SimpleUSBDevice extends Closeable {
 
     /**
-     * Closes this HiDevice and releases any system resources associated with
-     * it.
+     * Closes this SimpleUSBDevice and releases any system resources associated
+     * with it.
      */
     @Override
     public void close();
 
     /**
-     * Sends an output report to this hi device.
+     * Sends an output report to this device.
      * 
      * @param reportNumber
      *            the number of the report (usually 0).
      * @param report
      *            the contents of the report
      */
-    void setReport(final int reportNumber, final byte[] report);
+    void setReport(final short reportNumber, final byte[] report);
 }

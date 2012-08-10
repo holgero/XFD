@@ -17,11 +17,11 @@
 
 package de.holger_oehm.usb.leds;
 
-import de.holger_oehm.usb.hid.HiDevice;
+import de.holger_oehm.usb.device.SimpleUSBDevice;
 
 final class DyiLeds extends AbstractLeds implements USBLeds {
 
-    public DyiLeds(final HiDevice device) {
+    public DyiLeds(final SimpleUSBDevice device) {
         super(device);
     }
 

@@ -17,11 +17,11 @@
 
 package de.holger_oehm.usb.leds;
 
-import de.holger_oehm.usb.hid.HiDevice;
+import de.holger_oehm.usb.device.SimpleUSBDevice;
 
 final class DreamCheekyLeds extends AbstractLeds implements USBLeds {
 
-    public DreamCheekyLeds(final HiDevice device) {
+    public DreamCheekyLeds(final SimpleUSBDevice device) {
         super(device);
     }
 

@@ -1,5 +1,4 @@
-* convert usb service routine to interrupt
-  curiosity: wanna see if that works too
+* act on idle and wake up conditions
 * add a boot loader, to enable updates via USB
 * move from HID to vendor specific class
 * create footprint for mini usb socket and make a layout with it

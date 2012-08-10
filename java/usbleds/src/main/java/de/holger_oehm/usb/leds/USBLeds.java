@@ -20,10 +20,10 @@ package de.holger_oehm.usb.leds;
 import java.io.Closeable;
 import java.util.Iterator;
 
-import de.holger_oehm.usb.hid.HiDevice;
-import de.holger_oehm.usb.hid.HiDeviceException.HIDDeviceNotFoundException;
-import de.holger_oehm.usb.hid.HiDeviceFactory;
-import de.holger_oehm.usb.hid.USBAddress;
+import de.holger_oehm.usb.device.SimpleUSBDevice;
+import de.holger_oehm.usb.device.USBAddress;
+import de.holger_oehm.usb.device.USBDevice;
+import de.holger_oehm.usb.device.USBDeviceException.USBDeviceNotFoundException;
 
 public interface USBLeds extends Closeable {
     public static final class Factory {
@@ -60,7 +60,7 @@ public interface USBLeds extends Closeable {
             private void tryCreateNext(final USBAddress address) {
                 try {
                     next = createInstance(address);
-                } catch (final HIDDeviceNotFoundException e) {
+                } catch (final USBDeviceNotFoundException e) {
                 }
             }
 
@@ -84,7 +84,7 @@ public interface USBLeds extends Closeable {
         }
 
         public static USBLeds createInstance(final USBAddress address) {
-            final HiDevice device = new HiDeviceFactory().create(address);
+            final SimpleUSBDevice device = new USBDevice(address);
             if (address.getVendorId() == DREAM_CHEEKY.getVendorId()) {
                 return new DreamCheekyLeds(device);
             }
