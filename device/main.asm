@@ -49,6 +49,7 @@
 	extern	WaitConfiguredUSB
 	extern	ServiceUSB
 	extern	enableUSBInterrupts
+	extern	sleepUsbSuspended
 ; wait.asm
 	extern	waitMilliSeconds
 	extern	USB_received
@@ -168,14 +169,8 @@ main
 	movlw	b'10001111'		; LEDs on Port B, RB<4:6>
 	movwf	TRISB, ACCESS
 
-        movlw	TIMER0H_VAL
-	movwf	TMR0H, ACCESS
-        movlw	TIMER0L_VAL
-	movwf	TMR0L, ACCESS
-	movlw	0x97
-	movwf	T0CON, ACCESS		; set prescaler for Timer0 for 1:256 scaling
-					;	(Timer0 will go off every ~10 ms )
-		
+	call	setupTimer0
+
 	call	InitUSB			; initialize the USB module
 
 	call	WaitConfiguredUSB
@@ -211,39 +206,46 @@ waitTimerLoop
 	btfss	INTCON, T0IF, ACCESS
 	goto	waitTimerLoop
 
-	bcf	INTCON, T0IF, ACCESS	; clear Timer0 interrupt flag
-	movlw	TIMER0H_VAL
-	movwf	TMR0H, ACCESS
-	movlw	TIMER0L_VAL
-	movwf	TMR0L, ACCESS
+	call	setupTimer0
+
+	; start by switching off all LEDs
+	movlw	b'01110000'
+	movwf	LATB,ACCESS
+	; sleep as long as we are in suspend mode
+	call	sleepUsbSuspended
+
 	banksel	USB_received
 	btfsc	USB_received,0,BANKED
-	goto	setLEDs
+	goto	ledsChangedByHost
 
 	; nothing new from the host
 	; first divider: 10ms * 256 = 2.5s
 	banksel	noSignFromHostL
 	incfsz	noSignFromHostL, BANKED
-	goto	mainLoop
+	goto	setLeds
 
 	btfss	blinkenLights,7,BANKED	; already blinking?
 	goto	notYetBlinking		; no not yet
 	incf	blinkenLights,F,BANKED
-	btfsc	blinkenLights,1,BANKED	; 2*256*10ms: changes every 5.2s (not true, it is more like 10s, but dont know why... probably the timer fires only every 20ms???)
+	btfsc	blinkenLights,1,BANKED	; changes every time: blinking period is 5.2s
 	goto	yellowOn
-	movlw	b'01110000'		; all off (inverted)
+	; set led state to all off
+	banksel	LED_states
+	clrf	LED_states, BANKED
+	clrf	LED_states+1, BANKED
+	clrf	LED_states+2, BANKED
 	movwf	LATB,ACCESS
-	goto	mainLoop
+	goto	setLeds
 
 notYetBlinking
 	incf	noSignFromHostH,F,BANKED
-	btfss	noSignFromHostH,5,BANKED; 64*256*10ms ~= 160 seconds nothing from the host
-	goto	mainLoop		; not yet long enough
+	btfss	noSignFromHostH,5,BANKED; 32*256*10ms ~= 82 seconds nothing from the host
+	goto	setLeds			; not yet long enough
 yellowOn
-	clrf	blinkenLights,BANKED
+	clrf	blinkenLights,BANKED	; reset blink counter
 	bsf	blinkenLights,7,BANKED
-	bcf	LATB,5,ACCESS		; yellow on: clear RB5
-	goto	mainLoop
+	bsf	LED_states+1, 0, BANKED
+	goto	setLeds
 
 	; set leds according to led state, inverted logic. Use bits 4:6
 setled	macro	index
@@ -253,17 +255,31 @@ setled	macro	index
 	bcf	LATB, index + 4, ACCESS	; bit 0 set, clear port bit
 	endm
 
-setLEDs
+ledsChangedByHost
 	banksel	noSignFromHostL
 	clrf	noSignFromHostL, BANKED
 	clrf	noSignFromHostH, BANKED
 	clrf	blinkenLights, BANKED
 
+setLeds
 	banksel	LED_states
 	setled	0	; red
 	setled	1	; yellow
 	setled	2	; green
 
 	goto mainLoop
+
+setupTimer0
+	bcf	INTCON, T0IF, ACCESS	; clear Timer0 interrupt flag
+	; reload start value
+	movlw	TIMER0H_VAL
+	movwf	TMR0H, ACCESS
+	movlw	TIMER0L_VAL
+	movwf	TMR0L, ACCESS
+	; configure timer0: enable, 16 bit, internal clock, 256 prescaler
+	movlw	( 1 << TMR0ON ) | ( b'0111' )
+	movwf	T0CON, ACCESS
+
+	return
 
 			END

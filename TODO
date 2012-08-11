@@ -1,4 +1,3 @@
-* act on idle and wake up conditions
 * add a boot loader, to enable updates via USB
 * create footprint for mini usb socket and make a layout with it
 * device with brighter LEDs that can draw 500mA from the bus
