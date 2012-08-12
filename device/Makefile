@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-OBJECTS=usb.o wait.o main.o
+OBJECTS=descriptor.o wait.o main.o
 
 %.o : %.asm
-	gpasm -c -p p18f13k50 -r dec -w 2 $<
+	gpasm -c -p p18f13k50 -r dec -w 2 -I ../firmware/18f13k50 $<
 
 all: XFD.hex
 
 XFD.hex: $(OBJECTS)
-	gplink -o XFD.hex -a inhx32 -m $(OBJECTS)
+	gplink -o XFD.hex -a inhx32 -m -L ../firmware/18f13k50 usb.o $(OBJECTS)
 
 clean:
 	rm -f *.o *.map *.lst *.cod *.hex

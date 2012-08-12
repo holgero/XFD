@@ -17,9 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-all: device host java
+all: firmware device host java
 
-device:
+firmware:
+	$(MAKE) -C firmware/18f13k50 clean all
+
+device: firmware
 	$(MAKE) -C device clean all
 
 host:
@@ -30,4 +33,4 @@ java:
 	  mkdir -p usbleds/src/main/resources; \
 	  mvn clean install )
 
-.PHONY: all device host java
+.PHONY: all firmware device host java
