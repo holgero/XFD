@@ -24,7 +24,8 @@ OBJECTS=descriptor.o wait.o main.o
 all: XFD.hex
 
 XFD.hex: $(OBJECTS)
-	gplink -o XFD.hex -a inhx32 -m -L ../firmware/18f13k50 usb.o $(OBJECTS)
+	gplink -o XFD.hex -a inhx32 -m -I ../firmware/18f13k50 usb.o $(OBJECTS)
+	@test -f XFD.hex || ( echo gplink failed; exit 1 )
 
 clean:
 	rm -f *.o *.map *.lst *.cod *.hex
