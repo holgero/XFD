@@ -21,7 +21,7 @@ Clone the sources and initialize the submodule:
 $ git clone git://github.com/holgero/XFD.git
 $ cd XFD
 $ git submodule init
-$ git git submodule update
+$ git submodule update
 
 h2. Building
 
@@ -29,7 +29,7 @@ To build: Run make in the top level directory like this:
 $ make
 
 Needs to compile: make, gcc++, javac, maven, gputils
-Needs at runtime: java, usblib (on linux), HID.DLL (on windows).
+Needs at runtime: java, libusb-1.0 (on Linux), WinUSB driver (on Windows)
 
 You will find the firmware under device/XFD.hex, flash your PIC with it.
 
@@ -47,10 +47,11 @@ for generic USB devices once before you can use it. You can use Zadig
 h2. Contents
 
 Directories:
-device			firmware for the microcontroller
+firmware		git submodule contains the USB firmware
+device			main routine and USB descriptor for this device
 host			C++ executable and some demo scripts, mainly used
-			to test the hardware and firmware
-java/usbleds		usb leds java driver	
+			to test the hardware and firmware (Linux only)
+java/usbleds		usb leds java driver (tested on Linux and Windows 7)
 java/buildmonitor	main program with the build monitor
 hardware		device hardware
 
