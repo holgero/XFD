@@ -11,16 +11,25 @@ The device has its own official USB address (0x1d50:0x6039), thanks
 to Openmoko Inc. (see
 http://wiki.openmoko.org/wiki/USB_Product_IDs#USB_Vendor_and_Product_IDs ).
 
-The USB firmware in this project is also available in the spin-off project
-https://github.com/holgero/PicUsbFirmware .
+The USB firmware is now extracted in the spin-off project
+https://github.com/holgero/PicUsbFirmware . It is used as a git submodule
+in this project.
+
+h2. Project Setup
+
+Clone the sources and initialize the submodule:
+$ git clone git://github.com/holgero/XFD.git
+$ cd XFD
+$ git submodule init
+$ git submodule update
 
 h2. Building
 
-To build: Run make in the top level directory as this:
+To build: Run make in the top level directory like this:
 $ make
 
 Needs to compile: make, gcc++, javac, maven, gputils
-Needs at runtime: java, usblib (on linux), HID.DLL (on windows).
+Needs at runtime: java, libusb-1.0 (on Linux), WinUSB driver (on Windows)
 
 You will find the firmware under device/XFD.hex, flash your PIC with it.
 
@@ -38,10 +47,11 @@ for generic USB devices once before you can use it. You can use Zadig
 h2. Contents
 
 Directories:
-device			firmware for the microcontroller
+firmware		git submodule contains the USB firmware
+device			main routine and USB descriptor for this device
 host			C++ executable and some demo scripts, mainly used
-			to test the hardware and firmware
-java/usbleds		usb leds java driver	
+			to test the hardware and firmware (Linux only)
+java/usbleds		usb leds java driver (tested on Linux and Windows 7)
 java/buildmonitor	main program with the build monitor
 hardware		device hardware
 

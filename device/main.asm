@@ -195,10 +195,6 @@ main
 
 	call	InitUSB			; initialize the USB module
 
-;	CAVE: remove for production
-;	goto	mainLoop	; makes sense only for simulation, do not wait for USB
-;	CAVE: remove for production
-
 	call	WaitConfiguredUSB
 
 	; set up interrupt configuration
@@ -219,9 +215,9 @@ main
 	bsf	INTCON, GIEL		; enable low prio interrupt vector
 	
 	banksel	noSignFromHostL
-	clrf	noSignFromHostL
-	clrf	noSignFromHostH
-	clrf	blinkenLights
+	clrf	noSignFromHostL, BANKED
+	clrf	noSignFromHostH, BANKED
+	clrf	blinkenLights, BANKED
 
 mainLoop
 	banksel	USB_received
