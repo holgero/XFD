@@ -76,8 +76,10 @@
 
 ;**************************************************************
 ; local definitions
-#define TIMER0H_VAL         0xFE
-#define TIMER0L_VAL         0x20
+; timer setting for a 10 ms update rate at a 6 MHz CPU rate
+; preload value = 0xFFFF - 6000000 / prescaler / 100 = 0xFF1D
+#define TIMER0H_VAL         0xFF
+#define TIMER0L_VAL         0x1D
 
 ;**************************************************************
 ; local data
