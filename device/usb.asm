@@ -26,6 +26,7 @@
 	global	ServiceUSB
 	global	WaitConfiguredUSB
 	global	enableUSBInterrupts
+	global	sleepUsbSuspended
 
 ;**************************************************************
 ; exported variables
@@ -41,6 +42,7 @@ POWERED_STATE		EQU	0x00
 DEFAULT_STATE		EQU	0x01
 ADDRESS_STATE		EQU	0x02
 CONFIG_STATE		EQU	0x03
+SUSPEND_STATE		EQU	0x04
 
 ; endpoint types
 ENDPT_IN		EQU	0x12
@@ -275,9 +277,10 @@ InitUSB
 	return
 
 ServiceUSB
-	; this routine mostly only resets the USB interrupt bits
-	; only URSTIF (usb reset) and TRNIF (usb transaction complete) trigger 
-	; special actions
+	; * URSTIF (usb reset) -> resetUSB
+	; * TRNIF (usb transaction complete) -> processUSBTransaction
+	; * IDLEIF (3ms idle on usb) -> suspendUSB
+	; * ACTVIF (activity on interface) -> resumeUSB
 	btfsc	UIR, UERRIF, ACCESS
 	clrf	UEIR, BANKED
 
@@ -285,10 +288,10 @@ ServiceUSB
 	bcf	UIR, SOFIF, ACCESS
 
 	btfsc	UIR, IDLEIF, ACCESS
-	bcf	UIR, IDLEIF, ACCESS
+	goto	suspendUSB
 
 	btfsc	UIR, ACTVIF, ACCESS
-	call	clearActivityBit
+	goto	resumeUSB
 
 	btfsc	UIR, STALLIF, ACCESS
 	bcf	UIR, STALLIF, ACCESS
@@ -303,14 +306,44 @@ ServiceUSB
 	return
 
 
-clearActivityBit
-	bcf	UCON, SUSPND, ACCESS
+resumeUSB
+	bcf	UCON, SUSPND, ACCESS	; leave suspend
 clearActivityBitLoop
 	bcf	UIR, ACTVIF, ACCESS
 	btfsc	UIR, ACTVIF, ACCESS
 	goto	clearActivityBitLoop
+	banksel	USB_USWSTAT
+	movf	USB_USWSTAT,W,BANKED
+	sublw	SUSPEND_STATE
+	btfss	STATUS,Z,ACCESS		; skip if zero: we were suspended
+	goto	activNotFromSuspendMode	; not suspended, leave USB_USWSTAT as is
+	movlw	CONFIG_STATE		; restore CONFIG_STATE
+	movwf	USB_USWSTAT,BANKED
+activNotFromSuspendMode
 	return
 
+suspendUSB
+	bcf	UIR, IDLEIF, ACCESS
+	banksel	USB_USWSTAT
+	movf	USB_USWSTAT,W,BANKED
+	sublw	CONFIG_STATE
+	btfss	STATUS,Z,ACCESS		; skip if zero: we are configured
+	return				; not even configured: refuse to suspend
+	movlw	SUSPEND_STATE
+	movwf	USB_USWSTAT,BANKED
+	bsf	UCON, SUSPND, ACCESS	; suspend USB
+	return
+
+sleepUsbSuspended
+	banksel	USB_USWSTAT
+	movf	USB_USWSTAT,W,BANKED
+	sublw	SUSPEND_STATE
+	btfss	STATUS,Z,ACCESS		; skip if zero: we are suspended
+	return				; not suspended
+	bcf	OSCCON,IDLEN,ACCESS	; sleep tight (dont idle)
+	sleep
+	return
+	
 resetUSB
 	banksel		USB_curr_config
 	clrf		USB_curr_config, BANKED

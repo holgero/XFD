@@ -11,6 +11,9 @@ The device has its own official USB address (0x1d50:0x6039), thanks
 to Openmoko Inc. (see
 http://wiki.openmoko.org/wiki/USB_Product_IDs#USB_Vendor_and_Product_IDs ).
 
+The USB firmware in this project is also available in the spin-off project
+https://github.com/holgero/PicUsbFirmware .
+
 h2. Building
 
 To build: Run make in the top level directory as this:
@@ -50,3 +53,20 @@ master:		main branch, uses PIC18F13K50
 		and for sentimental reasons (I started in this branch).
 hid		a different approach to access the device on windows:
 		it is declared as a HID and accessed with the HID.DLL
+
+h2. License
+
+    Copyright (C) 2012  Holger Oehm
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
