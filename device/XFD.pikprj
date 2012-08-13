@@ -1,6 +1,7 @@
 [Assembler]
-include-dir=/home/holger/Elektronik/MicroController/PikDev/XFD
+include-dir=$(PRJPATH)/../firmware/18f13k50
 list=false
+other-options=
 radix=dec
 target-device=p18f13k50
 warn-level=2
@@ -14,7 +15,7 @@ other-options=
 slb=false
 
 [Files]
-inputFiles=usb.asm,main.asm,wait.asm
+inputFiles=main.asm,wait.asm,descriptor.asm
 
 [General]
 description=
@@ -26,5 +27,5 @@ version=0.1
 debug=false
 hex-format=inhx32
 map=true
-objs-libs-dir=
-other-options=
+objs-libs-dir=/home/holger/Programming/GitRoot/XFD/firmware/18f13k50
+other-options=usb.o

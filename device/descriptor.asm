@@ -38,13 +38,10 @@
 	; W out: first byte of Device descriptor (== length)
 
 	global	getConfigurationDescriptor
+	; W in: index of descriptor
 	; prepares copying an Configuration descriptor
 	; W out: third byte of ConfigurationDescriptor (== totalLength)
-
-;**************************************************************
-; local declarations
-VID		EQU		0x1d50
-PID		EQU		0x6039
+	;        0 if the descriptor index is invalid, sets Z
 
 ;**************************************************************
 ; local data
@@ -55,6 +52,12 @@ nextDescriptorIdx	RES	1
 ; local temp data
 descriptor_udata_ovr	UDATA_OVR
 length_tmp		RES	1
+
+;**************************************************************
+; local definitions
+NUM_CONFIGURATIONS	EQU	2
+VID			EQU	0x1d50
+PID			EQU	0x6039
 
 ;**************************************************************
 ; code section
@@ -105,7 +108,17 @@ getDeviceDescriptor
 	goto	getDescriptor		; get first byte == length
 
 getConfigurationDescriptor
-	movlw	low (Configuration1-Descriptor_begin)
+	; in W: index of descriptor
+	; out W: total length
+	sublw	NUM_CONFIGURATIONS	; check if descriptor index is valid
+	btfss	STATUS,C,ACCESS
+	goto	invalidDescriptorIndex	; W > NUM_CONFIGURATIONS
+	; OK, it was valid
+	sublw	NUM_CONFIGURATIONS	; restore value in W
+	addlw	low (ConfigurationsOffsetsTable - Descriptor_begin)
+	banksel	nextDescriptorIdx
+	movwf	nextDescriptorIdx, BANKED
+	call	getDescriptor		; returns value from the ConfigurationsOffsetsTable in W
 	addlw	0x02			; add offset for wTotalLength
 	movwf	nextDescriptorIdx, BANKED
 	call	getDescriptor		; get total descriptor length
@@ -117,7 +130,10 @@ getConfigurationDescriptor
 	banksel	length_tmp
 	movf	length_tmp, W, BANKED
 	return
-
+invalidDescriptorIndex
+	movlw	0x00			; total length of 0 signifies error
+	bsf	STATUS, Z, ACCESS	; set Z bit to make testing for zero easier
+	return
 
 Descriptor_begin
 Device
@@ -131,7 +147,7 @@ db	0x01, 0x00			; low(bcdDevice), high(bcdDevice)
 db	0x01, 0x02			; iManufacturer, iProduct
 db	0x00, NUM_CONFIGURATIONS	; iSerialNumber (none), bNumConfigurations
 
-Configuration1
+Configuration0
 db	0x09, CONFIGURATION		; bLength, bDescriptorType
 db	0x19, 0x00			; low(wTotalLength), high(wTotalLength)
 db	NUM_INTERFACES, 0x01		; bNumInterfaces, bConfigurationValue
@@ -145,6 +161,24 @@ db	0x07, ENDPOINT			; EP0: bLength, bDescriptorType
 db	0x81, 0x03			; bEndpointAddress (EP1 IN), bmAttributes (Interrupt)
 db	0x08, 0x00			; low(wMaxPacketSize), high(wMaxPacketSize)
 db	0x0A				; bInterval (10 ms)
+
+Configuration1
+db	0x09, CONFIGURATION		; bLength, bDescriptorType
+db	0x19, 0x00			; low(wTotalLength), high(wTotalLength)
+db	NUM_INTERFACES, 0x02		; bNumInterfaces, bConfigurationValue
+db	0x00, 0x80			; iConfiguration (none), bmAttributes
+db	0xFA, 0x09			; bMaxPower (500 mA), interface1: blength
+db	INTERFACE, 0x00			; INTERFACE, 0x00
+db	0x00, 0x01			; bAlternateSetting, bNumEndpoints (excluding EP0)
+db	0xFF, 0x00			; bInterfaceClass (vendor specific), bInterfaceSubClass (no subclass)
+db	0x00, 0x00			; bInterfaceProtocol (none), iInterface (none)
+db	0x07, ENDPOINT			; EP0: bLength, bDescriptorType
+db	0x81, 0x03			; bEndpointAddress (EP1 IN), bmAttributes (Interrupt)
+db	0x08, 0x00			; low(wMaxPacketSize), high(wMaxPacketSize)
+db	0x0A				; bInterval (10 ms)
+
+ConfigurationsOffsetsTable
+db	Configuration0 - Descriptor_begin, Configuration1 - Descriptor_begin
 
 CompatibleIdFeature                     ; MS extension
 db	0x28, 0x00			; low(descriptorLength), high(descriptorLength)
