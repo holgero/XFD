@@ -24,7 +24,7 @@ OBJECTS=descriptor.o wait.o main.o
 all: XFD.hex
 
 XFD.hex: $(OBJECTS)
-	gplink -o XFD.hex -a inhx32 -m -I ../firmware/18f13k50 usb.o $(OBJECTS)
+	gplink -o XFD.hex -a inhx32 -m -I ../firmware/18f13k50 usb.o $(OBJECTS) -s 18f13k50_bootloader.lkr
 	@test -f XFD.hex || ( echo gplink failed; exit 1 )
 
 clean:

@@ -28,4 +28,4 @@ debug=false
 hex-format=inhx32
 map=true
 objs-libs-dir=/home/holger/Programming/GitRoot/XFD/firmware/18f13k50
-other-options=usb.o
+other-options=usb.o -s /home/holger/Programming/GitRoot/XFD/device/18f13k50_bootloader.lkr

@@ -61,7 +61,7 @@ PID			EQU	0x6039
 
 ;**************************************************************
 ; code section
-descriptor_code		CODE	0x0f00
+descriptor_code		CODE
 
 copyNextDescriptorByte
 	call	getDescriptor

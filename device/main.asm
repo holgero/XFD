@@ -92,15 +92,6 @@ main_accessbank		UDATA_ACS
 W_temp_LP		RES	1
 
 ;**************************************************************
-; real vectors (not needed if a bootloader is in place)
-realResetvector			ORG	0x0000
-	goto	main
-realHiprio_interruptvector	ORG	0x0008
-	goto	highPriorityInterrupt
-realLowprio_interruptvector	ORG	0x0018
-	goto	lowPriorityInterrupt
-
-;**************************************************************
 ; vectors
 resetvector		ORG	0x0800
 	goto	main
@@ -111,7 +102,7 @@ lowprio_interruptvector	ORG	0x0818
 
 ;**************************************************************
 ; main code
-main_code		CODE	0x01600
+main_code		CODE
 
 highPriorityInterrupt
 	movff	FSR0H, FSR0H_temp_HP
