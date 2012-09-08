@@ -42,6 +42,13 @@
         config WRTD     = OFF
         config EBTR0    = OFF
         config EBTR1    = OFF
+
+;**************************************************************
+; exported subroutines
+	global	main
+	global	highPriorityInterrupt
+	global	lowPriorityInterrupt
+
 ;**************************************************************
 ; imported subroutines
 ; usb.asm

@@ -21,10 +21,14 @@ OBJECTS=descriptor.o wait.o main.o
 %.o : %.asm
 	gpasm -c -p p18f13k50 -r dec -w 2 -I ../firmware/18f13k50 $<
 
-all: XFD.hex
+all: XFD.hex XFD_noBL.hex
 
 XFD.hex: $(OBJECTS)
 	gplink -o XFD.hex -a inhx32 -m -I ../firmware/18f13k50 usb.o $(OBJECTS) -s 18f13k50_bootloader.lkr
+	@test -f XFD.hex || ( echo gplink failed; exit 1 )
+
+XFD_noBL.hex: $(OBJECTS) vectors_nobootloader.o
+	gplink -o XFD_noBL.hex -a inhx32 -m -I ../firmware/18f13k50 usb.o $(OBJECTS) vectors_nobootloader.o
 	@test -f XFD.hex || ( echo gplink failed; exit 1 )
 
 clean:
