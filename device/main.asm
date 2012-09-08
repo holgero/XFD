@@ -64,7 +64,7 @@
 ;**************************************************************
 ; imported variables
 ; usb.asm
-	extern	LED_states
+	extern	USB_data
 
 ;**************************************************************
 ; local definitions
@@ -228,10 +228,10 @@ waitTimerLoop
 	btfsc	blinkenLights,1,BANKED	; changes every time: blinking period is 5.2s
 	goto	yellowOn
 	; set led state to all off
-	banksel	LED_states
-	clrf	LED_states, BANKED
-	clrf	LED_states+1, BANKED
-	clrf	LED_states+2, BANKED
+	banksel	USB_data
+	clrf	USB_data, BANKED
+	clrf	USB_data+1, BANKED
+	clrf	USB_data+2, BANKED
 	movwf	LATB,ACCESS
 	goto	setLeds
 
@@ -242,25 +242,33 @@ notYetBlinking
 yellowOn
 	clrf	blinkenLights,BANKED	; reset blink counter
 	bsf	blinkenLights,7,BANKED
-	bsf	LED_states+1, 0, BANKED
+	banksel	USB_data
+	bsf	USB_data+1, 0, BANKED
 	goto	setLeds
 
 	; set leds according to led state, inverted logic. Use bits 4:6
 setled	macro	index
-	btfss	LED_states + index, 0, BANKED
+	btfss	USB_data + index, 0, BANKED
 	bsf	LATB, index + 4, ACCESS	; bit 0 cleared, set port bit
-	btfsc	LED_states + index, 0, BANKED
+	btfsc	USB_data + index, 0, BANKED
 	bcf	LATB, index + 4, ACCESS	; bit 0 set, clear port bit
 	endm
 
 ledsChangedByHost
+	banksel	USB_data
+	movf	USB_data + 7, W, BANKED
+	sublw	0x42			; command to start bootloader
+	bnz	noBootCommand
+	goto	0x001c			; run bootloader, triggers a reset and never comes back
+
+noBootCommand
 	banksel	noSignFromHostL
 	clrf	noSignFromHostL, BANKED
 	clrf	noSignFromHostH, BANKED
 	clrf	blinkenLights, BANKED
 
 setLeds
-	banksel	LED_states
+	banksel	USB_data
 	setled	0	; red
 	setled	1	; yellow
 	setled	2	; green

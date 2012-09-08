@@ -19,7 +19,7 @@ package de.holger_oehm.usb.leds;
 
 import de.holger_oehm.usb.device.SimpleUSBDevice;
 
-final class DyiLeds extends AbstractLeds implements USBLeds {
+public final class DyiLeds extends AbstractLeds implements USBLeds {
 
     public DyiLeds(final SimpleUSBDevice device) {
         super(device);
@@ -63,5 +63,9 @@ final class DyiLeds extends AbstractLeds implements USBLeds {
     @Override
     public void cyan() {
         setReportData(0, 1, 0, 1, 0);
+    }
+
+    public void flash() {
+        setReportData(0, 0, 0, 0, 0, 0, 0, 0x042);
     }
 }

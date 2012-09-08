@@ -46,4 +46,12 @@ abstract class AbstractLeds implements USBLeds {
         reportData[4] = (byte) b5;
         setReportData(b1, b2, b3);
     }
+
+    protected final void setReportData(final int b1, final int b2, final int b3, final int b4, final int b5, final int b6,
+            final int b7, final int b8) {
+        reportData[5] = (byte) b6;
+        reportData[6] = (byte) b7;
+        reportData[7] = (byte) b8;
+        setReportData(b1, b2, b3, b4, b5);
+    }
 }
