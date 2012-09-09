@@ -3,7 +3,7 @@ include-dir=$(PRJPATH)/../firmware/18f13k50
 list=false
 other-options=
 radix=dec
-target-device=p18f2550
+target-device=p18f13k50
 warn-level=2
 
 [C]
@@ -15,11 +15,11 @@ other-options=
 slb=false
 
 [Files]
-inputFiles=main.asm,wait.asm,descriptor.asm
+inputFiles=main.asm,wait.asm,descriptor.asm,vectors_nobootloader.asm
 
 [General]
 description=
-output=XFD.hex
+output=XFD_noBL.hex
 type=asm
 version=0.1
 
@@ -28,4 +28,4 @@ debug=false
 hex-format=inhx32
 map=true
 objs-libs-dir=/home/holger/Programming/GitRoot/XFD/firmware/18f13k50
-other-options=usb.o -s /home/holger/Programming/GitRoot/XFD/device/18f13k50_bootloader.lkr
+other-options=usb.o

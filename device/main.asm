@@ -57,6 +57,13 @@
         config EBTR0    = OFF
         config EBTR1    = OFF
         config EBTR2    = OFF
+
+;**************************************************************
+; exported subroutines
+	global	main
+	global	highPriorityInterrupt
+	global	lowPriorityInterrupt
+
 ;**************************************************************
 ; imported subroutines
 ; usb.asm
@@ -72,7 +79,7 @@
 ;**************************************************************
 ; imported variables
 ; usb.asm
-	extern	LED_states
+	extern	USB_data
 
 ;**************************************************************
 ; local definitions
@@ -109,15 +116,6 @@ main_accessbank		UDATA_ACS
 W_temp_LP		RES	1
 
 ;**************************************************************
-; real vectors (not needed if a bootloader is in place)
-realResetvector			ORG	0x0000
-	goto	main
-realHiprio_interruptvector	ORG	0x0008
-	goto	highPriorityInterrupt
-realLowprio_interruptvector	ORG	0x0018
-	goto	lowPriorityInterrupt
-
-;**************************************************************
 ; vectors
 resetvector		ORG	0x0800
 	goto	main
@@ -128,7 +126,7 @@ lowprio_interruptvector	ORG	0x0818
 
 ;**************************************************************
 ; main code
-main_code		CODE	0x01600
+main_code		CODE
 
 highPriorityInterrupt
 	movff	FSR0H, FSR0H_temp_HP
@@ -251,12 +249,13 @@ waitTimerLoop
 	btfsc	blinkenLights,1,BANKED	; changes every time: blinking period is 5.2s
 	goto	yellowOn
 	; set led state to all off
-	banksel	LED_states
-	clrf	LED_states, BANKED
-	clrf	LED_states+1, BANKED
-	clrf	LED_states+2, BANKED
-	clrf	LED_states+3, BANKED
-	clrf	LED_states+4, BANKED
+	banksel	USB_data
+	clrf	USB_data, BANKED
+	clrf	USB_data+1, BANKED
+	clrf	USB_data+2, BANKED
+	clrf	USB_data+3, BANKED
+	clrf	USB_data+4, BANKED
+	clrf	USB_data+5, BANKED
 	movwf	LATB,ACCESS
 	goto	setLeds
 
@@ -267,33 +266,41 @@ notYetBlinking
 yellowOn
 	clrf	blinkenLights,BANKED	; reset blink counter
 	bsf	blinkenLights,7,BANKED
-	bsf	LED_states+1, 0, BANKED
+	banksel	USB_data
+	bsf	USB_data+1, 0, BANKED
 	goto	setLeds
 
 	; set leds according to led state
 setled		macro	index
-	btfss	LED_states + index, 0, BANKED
+	btfss	USB_data + index, 0, BANKED
 	bcf	PORTB, index, ACCESS	; bit 0 cleared, clear port bit
-	btfsc	LED_states + index, 0, BANKED
+	btfsc	USB_data + index, 0, BANKED
 	bsf	PORTB, index, ACCESS	; bit 0 set, set port bit
 	endm
 
 	; inverted logic for LEDs on PORTA (pin 0 -> led lights)
 setsecondled	macro	index
-	btfss	LED_states + index, 0, BANKED
+	btfss	USB_data + index, 0, BANKED
 	bsf	PORTA, index, ACCESS	; bit 0 cleared, set port bit
-	btfsc	LED_states + index, 0, BANKED
+	btfsc	USB_data + index, 0, BANKED
 	bcf	PORTA, index, ACCESS	; bit 0 set, clear port bit
 	endm
 
 ledsChangedByHost
+	banksel	USB_data
+	movf	USB_data + 7, W, BANKED
+	sublw	0x42			; command to start bootloader
+	bnz	noBootCommand
+	goto	0x001c			; run bootloader, triggers a reset and never comes back
+
+noBootCommand
 	banksel	noSignFromHostL
 	clrf	noSignFromHostL, BANKED
 	clrf	noSignFromHostH, BANKED
 	clrf	blinkenLights, BANKED
 
 setLeds
-	banksel	LED_states
+	banksel	USB_data
 	setled	0	; red
 	setled	1	; yellow
 	setled	2	; green
