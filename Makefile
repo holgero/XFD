@@ -33,4 +33,10 @@ java:
 	  mkdir -p usbleds/src/main/resources; \
 	  mvn clean install )
 
-.PHONY: all firmware device host java
+clean:
+	$(MAKE) -C firmware/18f13k50 clean
+	$(MAKE) -C device clean
+	$(MAKE) -C host clean
+	( cd java; mvn clean )
+
+.PHONY: all firmware device host java clean
