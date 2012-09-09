@@ -34,7 +34,7 @@ java:
 	  mvn clean install )
 
 clean:
-	$(MAKE) -C firmware/18f13k50 clean
+	$(MAKE) -C firmware clean
 	$(MAKE) -C device clean
 	$(MAKE) -C host clean
 	( cd java; mvn clean )
