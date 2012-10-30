@@ -37,6 +37,8 @@ public class JenkinsView {
                 return BuildState.INSTABLE;
             case "red":
                 return BuildState.FAILED;
+            case "aborted":
+                return BuildState.ABORTED;
             }
             throw new IllegalStateException(color);
         }

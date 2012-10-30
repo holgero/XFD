@@ -54,6 +54,7 @@ public class BuildMonitor {
                     break;
                 case BUILDING:
                 case INSTABLE:
+                case ABORTED:
                     LEDS.yellow();
                     break;
                 case FAILED:
