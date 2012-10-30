@@ -64,9 +64,11 @@ master:		main branch, uses PIC18F13K50
 hid		a different approach to access the device on windows:
 		it is declared as a HID and accessed with the HID.DLL
 
-h2. CI Build
+h2. Binaries Download and CI Build
 
-A CI build of this project runs at travis-ci: http://travis-ci.org/holgero/XFD
+A CI build of this project runs at CloudBees: https://xfd.ci.cloudbees.com/
+
+You can download the latest snapshot build results from there.
 
 h2. License
 
