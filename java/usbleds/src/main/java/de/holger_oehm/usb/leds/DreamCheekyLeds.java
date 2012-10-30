@@ -64,4 +64,42 @@ final class DreamCheekyLeds extends AbstractLeds implements USBLeds {
     public void cyan() {
         setReportData(0, 64, 64);
     }
+
+    @Override
+    public void set(final LedColor... colors) {
+        int red = 0, green = 0, blue = 0;
+        for (final LedColor ledColor : colors) {
+            switch (ledColor) {
+            case RED:
+                red = 64;
+                break;
+            case YELLOW:
+                red = 64;
+                green = 64;
+                break;
+            case GREEN:
+                green = 64;
+                break;
+            case BLUE:
+                blue = 64;
+                break;
+            case WHITE:
+                red = 64;
+                green = 64;
+                blue = 64;
+                break;
+            case CYAN:
+                green = 64;
+                blue = 64;
+                break;
+            case MAGENTA:
+                red = 64;
+                blue = 64;
+                break;
+            default:
+                throw new IllegalStateException("Unexpected color " + ledColor);
+            }
+        }
+        setReportData(red, green, blue);
+    }
 }

@@ -18,6 +18,7 @@
 package de.holger_oehm.xfd;
 
 import de.holger_oehm.usb.leds.USBLeds;
+import de.holger_oehm.usb.leds.USBLeds.LedColor;
 import de.holger_oehm.xfd.jenkins.BuildState;
 import de.holger_oehm.xfd.jenkins.JenkinsMonitor;
 
@@ -52,13 +53,18 @@ public class BuildMonitor {
                 case OK:
                     LEDS.green();
                     break;
-                case BUILDING:
+                case OK_BUILDING:
+                    LEDS.set(LedColor.GREEN, LedColor.YELLOW);
+                    break;
                 case INSTABLE:
-                case ABORTED:
+                case INSTABLE_BUILDING:
                     LEDS.yellow();
                     break;
                 case FAILED:
                     LEDS.red();
+                    break;
+                case FAILED_BUILDING:
+                    LEDS.set(LedColor.RED, LedColor.YELLOW);
                     break;
                 default:
                     throw new IllegalStateException("Unexpected state " + buildState);

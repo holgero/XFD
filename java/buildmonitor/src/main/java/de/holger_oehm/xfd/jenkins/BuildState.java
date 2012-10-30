@@ -17,7 +17,7 @@
 package de.holger_oehm.xfd.jenkins;
 
 public enum BuildState {
-    OK, BUILDING, INSTABLE, ABORTED, FAILED;
+    OK, OK_BUILDING, INSTABLE, INSTABLE_BUILDING, FAILED_BUILDING, FAILED;
 
     public boolean isWorse(final BuildState other) {
         return ordinal() > other.ordinal();

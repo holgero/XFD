@@ -26,19 +26,23 @@ public class JenkinsView {
         private String color;
 
         BuildState getState() {
-            if (color.endsWith("_anime")) {
-                return BuildState.BUILDING;
-            }
             switch (color) {
             case "disabled":
             case "blue":
                 return BuildState.OK;
+            case "disabled_anime":
+            case "blue_anime":
+                return BuildState.OK_BUILDING;
             case "yellow":
+            case "aborted":
                 return BuildState.INSTABLE;
+            case "yellow_anime":
+            case "aborted_anime":
+                return BuildState.INSTABLE_BUILDING;
             case "red":
                 return BuildState.FAILED;
-            case "aborted":
-                return BuildState.ABORTED;
+            case "red_anime":
+                return BuildState.FAILED_BUILDING;
             }
             throw new IllegalStateException(color);
         }

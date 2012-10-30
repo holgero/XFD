@@ -26,6 +26,10 @@ import de.holger_oehm.usb.device.USBDevice;
 import de.holger_oehm.usb.device.USBDeviceException.USBDeviceNotFoundException;
 
 public interface USBLeds extends Closeable {
+    enum LedColor {
+        RED, YELLOW, GREEN, BLUE, WHITE, MAGENTA, CYAN;
+    }
+
     public static final class Factory {
         private static final USBAddress USBLEDS = new USBAddress(0x1d50, 0x6039);
         private static final USBAddress DREAM_CHEEKY = new USBAddress(0x1d34, 0x0004);
@@ -91,6 +95,8 @@ public interface USBLeds extends Closeable {
             return new DyiLeds(device);
         }
     }
+
+    void set(LedColor... colors);
 
     void red();
 

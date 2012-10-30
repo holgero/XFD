@@ -68,4 +68,39 @@ public final class DyiLeds extends AbstractLeds implements USBLeds {
     public void flash() {
         setReportData(0, 0, 0, 0, 0, 0, 0, 0x042);
     }
+
+    @Override
+    public void set(final LedColor... colors) {
+        int red = 0, yellow = 0, green = 0, blue = 0, white = 0;
+        for (final LedColor ledColor : colors) {
+            switch (ledColor) {
+            case RED:
+                red = 1;
+                break;
+            case YELLOW:
+                yellow = 1;
+                break;
+            case GREEN:
+                green = 1;
+                break;
+            case BLUE:
+                blue = 1;
+                break;
+            case WHITE:
+                white = 1;
+                break;
+            case CYAN:
+                green = 1;
+                blue = 1;
+                break;
+            case MAGENTA:
+                blue = 1;
+                red = 1;
+                break;
+            default:
+                throw new IllegalStateException("Unexpected color " + ledColor);
+            }
+        }
+        setReportData(red, yellow, green, blue, white);
+    }
 }
