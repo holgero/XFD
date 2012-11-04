@@ -68,8 +68,12 @@
 
 ;**************************************************************
 ; local definitions
-#define TIMER0H_VAL         0xFE
-#define TIMER0L_VAL         0x20
+#define TIMER0H_VAL	0xFE
+#define TIMER0L_VAL	0x20
+
+; uncomment if the pins drive the led directly (assuming the
+; LEDs are connected to the positive voltage)
+; #define INVERTED_IO	1
 
 ;**************************************************************
 ; local data
@@ -194,7 +198,11 @@ main
 	clrf	noSignFromHostL, BANKED
 	clrf	noSignFromHostH, BANKED
 	clrf	blinkenLights, BANKED
-	movlw	b'01110000'		; switch all leds off (inverted)
+	IFDEF INVERTED_IO
+		movlw	b'01110000'		; switch all leds off (inverted)
+	ELSE
+		movlw	b'00000000'		; switch all leds off
+	ENDIF
 	movwf	LATB,ACCESS
 
 mainLoop
@@ -246,12 +254,20 @@ yellowOn
 	bsf	USB_data+1, 0, BANKED
 	goto	setLeds
 
-	; set leds according to led state, inverted logic. Use bits 4:6
+	; set leds according to led state. Use bits 4:6
 setled	macro	index
 	btfss	USB_data + index, 0, BANKED
-	bsf	LATB, index + 4, ACCESS	; bit 0 cleared, set port bit
+	IFDEF INVERTED_IO
+		bsf	LATB, index + 4, ACCESS	; bit 0 cleared, set port bit
+	ELSE
+		bcf	LATB, index + 4, ACCESS	; bit 0 cleared, clear port bit
+	ENDIF
 	btfsc	USB_data + index, 0, BANKED
-	bcf	LATB, index + 4, ACCESS	; bit 0 set, clear port bit
+	IFDEF INVERTED_IO
+		bcf	LATB, index + 4, ACCESS	; bit 0 set, clear port bit
+	ELSE
+		bsf	LATB, index + 4, ACCESS	; bit 0 set, set port bit
+	ENDIF
 	endm
 
 ledsChangedByHost
