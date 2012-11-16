@@ -23,26 +23,28 @@ import java.util.Iterator;
 import de.holger_oehm.usb.leds.USBLeds;
 
 public class TestUSBLeds {
+    private static final long BLINKTIME = 500L;
+
     public static void main(final String[] args) throws InterruptedException, IOException {
         for (final Iterator<USBLeds> iterator = USBLeds.Factory.enumerateLedDevices(); iterator.hasNext();) {
             try (final USBLeds leds = iterator.next()) {
                 for (int i = 0; i < 3; i++) {
                     leds.red();
-                    Thread.sleep(100L);
+                    Thread.sleep(BLINKTIME);
                     leds.yellow();
-                    Thread.sleep(100L);
+                    Thread.sleep(BLINKTIME);
                     leds.green();
-                    Thread.sleep(100L);
+                    Thread.sleep(BLINKTIME);
                     leds.blue();
-                    Thread.sleep(100L);
+                    Thread.sleep(BLINKTIME);
                     leds.white();
-                    Thread.sleep(100L);
+                    Thread.sleep(BLINKTIME);
                     leds.magenta();
-                    Thread.sleep(100L);
+                    Thread.sleep(BLINKTIME);
                     leds.cyan();
-                    Thread.sleep(100L);
+                    Thread.sleep(BLINKTIME);
                     leds.off();
-                    Thread.sleep(200L);
+                    Thread.sleep(2 * BLINKTIME);
                 }
             }
         }
