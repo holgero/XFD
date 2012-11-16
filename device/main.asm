@@ -74,6 +74,11 @@
 ; uncomment if the pins drive the led directly (assuming the
 ; LEDs are connected to the positive voltage)
 ; #define INVERTED_IO	1
+IFDEF INVERTED_IO
+#define	ALL_LEDS_OFF	b'01110000'	; inverted led bits
+ELSE
+#define	ALL_LEDS_OFF	b'00000000'	; zero led bits
+ENDIF
 
 ;**************************************************************
 ; local data
@@ -198,11 +203,9 @@ main
 	clrf	noSignFromHostL, BANKED
 	clrf	noSignFromHostH, BANKED
 	clrf	blinkenLights, BANKED
-	IFDEF INVERTED_IO
-		movlw	b'01110000'		; switch all leds off (inverted)
-	ELSE
-		movlw	b'00000000'		; switch all leds off
-	ENDIF
+
+	; switch all leds off
+	movlw	ALL_LEDS_OFF
 	movwf	LATB,ACCESS
 
 mainLoop
@@ -215,7 +218,7 @@ waitTimerLoop
 	call	setupTimer0
 
 	; start by switching off all LEDs
-	movlw	b'01110000'
+	movlw	ALL_LEDS_OFF
 	movwf	LATB,ACCESS
 	; sleep as long as we are in suspend mode
 	call	sleepUsbSuspended
