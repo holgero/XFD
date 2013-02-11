@@ -21,8 +21,16 @@ import de.holger_oehm.usb.device.SimpleUSBDevice;
 
 final class DreamCheekyLeds extends AbstractLeds implements USBLeds {
 
+    private static final byte[][] INIT_DATA = new byte[][] { { 0x1f, 0x02, 0x00, 0x2e, 0x00, 0x00, 0x2b, 0x03 }, //
+            { 0x00, 0x02, 0x00, 0x2e, 0x00, 0x00, 0x2b, 0x04 }, //
+            { 0x00, 0x02, 0x00, 0x2e, 0x00, 0x00, 0x2b, 0x05 }, };
+
     public DreamCheekyLeds(final SimpleUSBDevice device) {
         super(device);
+        for (final byte[] element : INIT_DATA) {
+            setReportData(element);
+        }
+        setReportData(0, 0, 0, 0, 0, 0, 0, 5);
     }
 
     @Override

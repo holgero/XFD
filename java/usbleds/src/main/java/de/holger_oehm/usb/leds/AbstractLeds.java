@@ -34,11 +34,15 @@ abstract class AbstractLeds implements USBLeds {
         device.close();
     }
 
+    protected final void setReportData(final byte[] data) {
+        device.setReport((short) 0, data);
+    }
+
     protected final void setReportData(final int b1, final int b2, final int b3) {
         reportData[0] = (byte) b1;
         reportData[1] = (byte) b2;
         reportData[2] = (byte) b3;
-        device.setReport((short) 0, reportData);
+        setReportData(reportData);
     }
 
     protected final void setReportData(final int b1, final int b2, final int b3, final int b4, final int b5) {
