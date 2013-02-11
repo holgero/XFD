@@ -18,13 +18,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 usbleds r
-sleep 10
+sleep 5
 usbleds ry
 sleep 2
 usbleds g
-sleep 10
+sleep 5
 usbleds y
 sleep 2
 usbleds r
-sleep 10
+sleep 5
 usbleds o
