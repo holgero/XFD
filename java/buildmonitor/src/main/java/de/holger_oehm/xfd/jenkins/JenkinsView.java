@@ -27,6 +27,7 @@ public class JenkinsView {
 
         BuildState getState() {
             switch (color) {
+            case "grey":
             case "disabled":
             case "blue":
                 return BuildState.OK;

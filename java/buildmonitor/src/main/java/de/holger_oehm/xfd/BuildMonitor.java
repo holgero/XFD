@@ -76,7 +76,7 @@ public class BuildMonitor {
                 return;
             } catch (final Exception e) {
                 System.err.println(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage());
-                LEDS.magenta();
+                LEDS.set(LedColor.RED, LedColor.YELLOW, LedColor.GREEN);
             }
         } while (true);
     }
