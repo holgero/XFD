@@ -68,7 +68,9 @@ h2. Binaries Download and CI Build
 
 A CI build of this project runs at CloudBees: https://xfd.ci.cloudbees.com/
 
-You can download the latest snapshot build results from there.
+The latest snapshot build is archived to this repository https://repository-xfd.forge.cloudbees.com/snapshot.
+
+You can download the latest snapshot build results from the snapshot repository or from the build job itself (if it is currently enabled).
 
 h2. License
 
