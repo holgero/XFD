@@ -19,7 +19,7 @@ package de.holger_oehm.usb.leds;
 
 import de.holger_oehm.usb.device.SimpleUSBDevice;
 
-public final class DyiLeds extends AbstractLeds implements USBLeds {
+public final class DyiLeds extends AbstractLeds {
 
     public DyiLeds(final SimpleUSBDevice device) {
         super(device);

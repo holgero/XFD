@@ -17,26 +17,22 @@
 
 package de.holger_oehm.xfd;
 
+import java.util.Iterator;
+
+import de.holger_oehm.usb.device.USBDeviceException;
 import de.holger_oehm.usb.leds.USBLeds;
 import de.holger_oehm.usb.leds.USBLeds.LedColor;
 import de.holger_oehm.xfd.jenkins.BuildState;
 import de.holger_oehm.xfd.jenkins.JenkinsMonitor;
 
 public class BuildMonitor {
-    private static final USBLeds LEDS = USBLeds.Factory.enumerateLedDevices().next();
-
     public static void main(final String[] args) {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                LEDS.close();
-            }
-        });
         new BuildMonitor(args[0]).run();
     }
 
     private final JenkinsMonitor monitor;
     private final String url;
+    private USBLeds leds;
 
     public BuildMonitor(final String url) {
         this.url = url;
@@ -44,6 +40,8 @@ public class BuildMonitor {
     }
 
     private void run() {
+        leds = USBLeds.Factory.enumerateLedDevices().next();
+        registerShutdownHook();
         do {
             try {
                 Thread.sleep(1000);
@@ -51,20 +49,20 @@ public class BuildMonitor {
                 System.out.println(url + ": " + buildState);
                 switch (buildState) {
                 case OK:
-                    LEDS.green();
+                    leds.green();
                     break;
                 case OK_BUILDING:
-                    LEDS.set(LedColor.GREEN, LedColor.YELLOW);
+                    leds.set(LedColor.GREEN, LedColor.YELLOW);
                     break;
                 case INSTABLE:
                 case INSTABLE_BUILDING:
-                    LEDS.yellow();
+                    leds.yellow();
                     break;
                 case FAILED:
-                    LEDS.red();
+                    leds.red();
                     break;
                 case FAILED_BUILDING:
-                    LEDS.set(LedColor.RED, LedColor.YELLOW);
+                    leds.set(LedColor.RED, LedColor.YELLOW);
                     break;
                 default:
                     throw new IllegalStateException("Unexpected state " + buildState);
@@ -72,12 +70,48 @@ public class BuildMonitor {
                 Thread.sleep(60000);
             } catch (final InterruptedException interrupt) {
                 Thread.currentThread().interrupt();
-                LEDS.off();
+                leds.off();
                 return;
+            } catch (final USBDeviceException e) {
+                System.err.println(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage());
+                recoverFromUSBException();
             } catch (final Exception e) {
                 System.err.println(e.getClass().getSimpleName() + ": " + e.getLocalizedMessage());
-                LEDS.set(LedColor.RED, LedColor.YELLOW, LedColor.GREEN);
+                leds.set(LedColor.RED, LedColor.YELLOW, LedColor.GREEN);
             }
         } while (true);
+    }
+
+    private void recoverFromUSBException() {
+        try {
+            try {
+                leds.close();
+            } catch (final USBDeviceException e) {
+                System.err.println("Ignoring \"" + e.getClass().getSimpleName() + ": " + e.getLocalizedMessage()
+                        + "\" during close while trying to recover from previous error.");
+            }
+            leds = null;
+            do {
+                Thread.sleep(10000);
+                final Iterator<USBLeds> enumerator = USBLeds.Factory.enumerateLedDevices();
+                if (enumerator.hasNext()) {
+                    leds = enumerator.next();
+                }
+            } while (leds == null);
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void registerShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                if (leds != null) {
+                    leds.close();
+                }
+            }
+        });
     }
 }

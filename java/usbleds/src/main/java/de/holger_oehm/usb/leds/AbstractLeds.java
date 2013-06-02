@@ -30,8 +30,11 @@ abstract class AbstractLeds implements USBLeds {
 
     @Override
     public void close() {
-        off();
-        device.close();
+        try {
+            off();
+        } finally {
+            device.close();
+        }
     }
 
     protected final void setReportData(final byte[] data) {

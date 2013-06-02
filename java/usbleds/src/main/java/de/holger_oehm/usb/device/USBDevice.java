@@ -54,8 +54,11 @@ public class USBDevice implements SimpleUSBDevice {
     public void setReport(final short reportNumber, final byte[] report) {
         final byte requesttype = USB_TYPE_CLASS | USB_RECIP_INTERFACE;
         final short wValue = 0;
-        Usblib.INSTANCE.libusb_control_transfer(handle, requesttype, HID_SET_REPORT, wValue, reportNumber, report,
-                (short) report.length, 100);
+        final int returnValue = Usblib.INSTANCE.libusb_control_transfer(handle, requesttype, HID_SET_REPORT, wValue,
+                reportNumber, report, (short) report.length, 100);
+        if (returnValue != report.length) {
+            throw new USBDeviceException("libusb_control_transfer failed: " + returnValue);
+        }
     }
 
 }
