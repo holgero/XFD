@@ -31,6 +31,7 @@ public class JenkinsView {
             case "disabled":
             case "blue":
                 return BuildState.OK;
+            case "grey_anime":
             case "disabled_anime":
             case "blue_anime":
                 return BuildState.OK_BUILDING;
