@@ -40,7 +40,7 @@ public class BuildMonitor {
     }
 
     private void run() {
-        leds = USBLeds.Factory.enumerateLedDevices().next();
+        waitForLedsAvailable();
         registerShutdownHook();
         do {
             try {
@@ -84,18 +84,24 @@ public class BuildMonitor {
 
     private void recoverFromUSBException() {
         try {
-            try {
-                leds.close();
-            } catch (final USBDeviceException e) {
-                System.err.println("Ignoring \"" + e.getClass().getSimpleName() + ": " + e.getLocalizedMessage()
-                        + "\" during close while trying to recover from previous error.");
-            }
-            leds = null;
+            leds.close();
+        } catch (final USBDeviceException e) {
+            System.err.println("Ignoring \"" + e.getClass().getSimpleName() + ": " + e.getLocalizedMessage()
+                    + "\" during close while trying to recover from previous error.");
+        }
+        leds = null;
+        waitForLedsAvailable();
+    }
+
+    private void waitForLedsAvailable() {
+        try {
             do {
-                Thread.sleep(10000);
                 final Iterator<USBLeds> enumerator = USBLeds.Factory.enumerateLedDevices();
                 if (enumerator.hasNext()) {
                     leds = enumerator.next();
+                }
+                if (leds == null) {
+                    Thread.sleep(10000);
                 }
             } while (leds == null);
         } catch (final InterruptedException e) {
