@@ -1,4 +1,4 @@
-h1. eXtreme Fedback Device
+# eXtreme Fedback Device
 
 The aim is to bring the feedback from the continous integration build
 faster to the developer.
