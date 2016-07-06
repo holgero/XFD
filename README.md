@@ -15,7 +15,7 @@ The USB firmware is now extracted in the spin-off project
 https://github.com/holgero/PicUsbFirmware . It is used as a git submodule
 in this project.
 
-h2. Project Setup
+## Project Setup
 
 Clone the sources and initialize the submodule:
 $ git clone git://github.com/holgero/XFD.git
@@ -23,7 +23,7 @@ $ cd XFD
 $ git submodule init
 $ git submodule update
 
-h2. Building
+## Building
 
 To build: Run make in the top level directory like this:
 $ make
@@ -44,7 +44,7 @@ for generic USB devices once before you can use it. You can use Zadig
 (https://github.com/pbatard/libwdi/wiki/Zadig) for that purpose.
 
 
-h2. Contents
+## Contents
 
 Directories:
 firmware		git submodule contains the USB firmware
@@ -64,7 +64,7 @@ master:		main branch, uses PIC18F13K50
 hid		a different approach to access the device on windows:
 		it is declared as a HID and accessed with the HID.DLL
 
-h2. Binaries Download and CI Build
+## Binaries Download and CI Build
 
 A CI build of this project runs at CloudBees: https://xfd.ci.cloudbees.com/
 
@@ -72,7 +72,7 @@ The latest snapshot build is archived to this repository https://repository-xfd.
 
 You can download the latest snapshot build results from the snapshot repository or from the build job itself (if it is currently enabled).
 
-h2. License
+## License
 
     Copyright (C) 2012  Holger Oehm
 
