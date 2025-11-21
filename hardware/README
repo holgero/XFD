@@ -1,9 +1,0 @@
-The schematic for the device hardware is in the file XFD.sch. This is
-a source file for gschem (see http://www.geda-project.org/). It is also
-exported as a JPEG in XFD.jpeg.
-
-The pcb layout is in the file XFD.pcb. This is a source file for pcb
-(also see http://www.geda-project.org/). Exported to XFD.ps.
-
-A bill of materials is in XFD.bom, it is created from XFD.sch by:
-	gnetlist -g partslist3 XFD.sch -o XFD.bom
